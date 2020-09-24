@@ -1,2 +1,3 @@
 # kubernetes
-Some notes about k8s.
+
+Some learning notes about k8s.
