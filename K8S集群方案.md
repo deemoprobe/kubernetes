@@ -26,3 +26,10 @@ kubeadm init --kubernetes-version=1.19.3  \
 --image-repository registry.aliyuncs.com/google_containers  \
 --service-cidr=192.168.0.0/16 \
 --pod-network-cidr=10.122.0.0/16
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+kubeadm join 192.168.3.13:6443 --token vmbhd0.e4cszyn6ozqv9tet \
+    --discovery-token-ca-cert-hash sha256:c8fd072fd90c9ddbae3b3945ba0120abf5ed6777de3354a6eb4814a93ed1b844
