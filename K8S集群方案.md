@@ -11,3 +11,18 @@
 |  k8s-master  |     2     |    4G    |   150G   | centos 8 |
 |  k8s-node1   |     1     |    3G    |   100G   | centos 8 |
 |  k8s-node2   |     1     |    3G    |   100G   | centos 8 |
+
+sudo swapoff -a
+sudo vi /etc/selinux/config
+    selinux=disable
+sudo vi /etc/hosts
+sudo systemctl stop firewalld
+sudo systemctl disable firewalld
+
+kubeadm reset --force
+
+kubeadm init --kubernetes-version=1.19.3  \
+--apiserver-advertise-address=192.168.3.13   \
+--image-repository registry.aliyuncs.com/google_containers  \
+--service-cidr=192.168.0.0/16 \
+--pod-network-cidr=10.122.0.0/16
