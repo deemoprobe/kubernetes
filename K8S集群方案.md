@@ -9,8 +9,8 @@
 | 主机节点名称 | CPU核心数 | 内存大小 | 磁盘大小 | 系统版本 |
 | :----------: | :-------: | :------: | :------: | :------: |
 |  k8s-master  |     2     |    4G    |   150G   | centos 8 |
-|  k8s-node1   |     1     |    3G    |   100G   | centos 8 |
-|  k8s-node2   |     1     |    3G    |   100G   | centos 8 |
+|  k8s-node1   |     2     |    3G    |   100G   | centos 8 |
+|  k8s-node2   |     2     |    3G    |   100G   | centos 8 |
 
 sudo swapoff -a
 sudo vi /etc/selinux/config
