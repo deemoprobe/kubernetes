@@ -1,8 +1,8 @@
 # Kubernetes 学习规划
 
-## 容器及编排 （Containers & Orchestration）
+## 1.容器及编排 （Containers & Orchestration）
 
-成果: 通过kubeadm 在个人的虚拟机环境安装 Kubernetes 集群
+目的: 通过kubeadm 在个人的虚拟机环境安装 Kubernetes 集群
 
 参考:
 
@@ -13,9 +13,9 @@
 - 安装网络插件  
 <https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#podnetwork>
 
-## Kubernetes 架构
+## 2.Kubernetes 架构
 
-成果: 使用kubectl管理 Kubernetes
+目的: 使用kubectl管理 Kubernetes
 
 参考:
 
@@ -32,9 +32,9 @@ Kubectl 备忘录
 - 管理运行中的Pods  
 <https://kubernetes.io/docs/reference/kubectl/cheatsheet/#interacting-withrunning-pods>
 
-## Pods and Configs
+## 3.Pods and Configs
 
-成果: Pods 及其配置文件
+目的: Pods 及其配置文件
 
 参考:
 
@@ -45,9 +45,9 @@ Kubectl 备忘录
 - Pod概述和模板示例  
 <https://kubernetes.io/docs/concepts/workloads/pods/podoverview/>
 
-## Controllers 控制器
+## 4.Controllers 控制器
 
-成果: 练习Deployments 和 ReplicaSets
+目的: 练习Deployments 和 ReplicaSets
 
 参考:
 
@@ -66,9 +66,9 @@ Kubectl 备忘录
 - Job 说明及示例  
 <https://kubernetes.io/docs/concepts/workloads/controllers/jobs-run-to-completion/>
 
-## 定义服务和Kube-Proxy (Services & Kube-Proxy)
+## 5.定义服务和Kube-Proxy (Services & Kube-Proxy)
 
-成果: 练习创建服务
+目的: 练习创建服务
 
 参考:
 
@@ -77,9 +77,9 @@ Kubectl 备忘录
 - 便签选择和服务  
 <https://kubernetes.io/docs/concepts/servicesnetworking/service/#defining-a-service>  
 
-## 管理状态（Managing State）
+## 6.管理状态（Managing State）
 
-成果: 练习创建存储卷
+目的: 练习创建存储卷
 
 参考:
 
@@ -97,9 +97,9 @@ Kubectl 备忘录
 - ConfigMaps  
 <https://kubernetes.io/docs/tasks/configure-pod-container/configure-podconfigmap>
 
-## API 和Pod 的安全
+## 7.API 和Pod 的安全
 
-成果: 联系创建命名空间、配额、限制范围和准入控制
+目的: 联系创建命名空间、配额、限制范围和准入控制
 
 参考:
 
@@ -116,9 +116,9 @@ Kubectl 备忘录
 <https://kubernetes.io/docs/reference/access-authn-authz/authorization/>  
 <https://kubernetes.io/docs/concepts/policy/pod-security-policy/>
 
-## 可观测性 （Observability）
+## 8.可观测性 （Observability）
 
-成果: 使用 metrics server 配置 HPAs
+目的: 使用 metrics server 配置 HPAs
 
 参考:
 
@@ -128,9 +128,9 @@ Kubectl 备忘录
 <https://kubernetes.io/docs/tasks/run-application/horizontal-podautoscale/>  
 <https://kubernetes.io/docs/tasks/run-application/horizontal-podautoscale-walkthrough/>
 
-## 进口流量(Ingress)
+## 9.进口流量(Ingress)
 
-成果: 练习使用 ingress controllers
+目的: 练习使用 ingress controllers
 
 参考:
 
@@ -153,9 +153,9 @@ Kubectl 备忘录
 - 创建一个Deployment  
 <https://kubernetes.io/docs/concepts/services-networking/service/>
 
-## 网络策略(Kubernetes Networking)
+## 10.网络策略(Kubernetes Networking)
 
-成果: 练习网络策略
+目的: 练习网络策略
 
 参考:
 
@@ -165,9 +165,9 @@ Kubectl 备忘录
 - 网络策略示例  
 <https://kubernetes.io/docs/concepts/services-networking/networkpolicies/#the-networkpolicy-resource>
 
-## Etcd 数据库
+## 11.Etcd 数据库
 
-成果: Etcd 集群的操作练习
+目的: Etcd 集群的操作练习
 
 参考:
 
