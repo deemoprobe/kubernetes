@@ -2,15 +2,27 @@
 
 ## 资源分配
 
-先删除所有大型游戏吧,c
+### 节点准备
 
-安装VMware Workstation Pro 16, 安装部署3套 CentOS 8
+| 主机节点名称 |      IP      | CPU核心数 | 内存大小 | 磁盘大小 | 系统版本 |
+| :----------: | :----------: | :-------: | :------: | :------: | :------: |
+|  k8s-master  | 192.168.3.13 |     2     |    4G    |   150G   | centos 8 |
+|  k8s-node1   | 192.168.3.14 |     2     |    3G    |   100G   | centos 8 |
+|  k8s-node2   | 192.168.3.15 |     2     |    3G    |   100G   | centos 8 |
 
-| 主机节点名称 | CPU核心数 | 内存大小 | 磁盘大小 | 系统版本 |
-| :----------: | :-------: | :------: | :------: | :------: |
-|  k8s-master  |     2     |    4G    |   150G   | centos 8 |
-|  k8s-node1   |     2     |    3G    |   100G   | centos 8 |
-|  k8s-node2   |     2     |    3G    |   100G   | centos 8 |
+### Harbor
+
+镜像仓库
+
+### Router软路由
+
+koolshare
+
+### 初始化方案
+
+kubeadm
+
+## 操作步骤
 
 sudo swapoff -a
 sudo vi /etc/selinux/config
