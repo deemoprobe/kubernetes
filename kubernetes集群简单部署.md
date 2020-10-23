@@ -1,4 +1,4 @@
-# Kubernetes 安装部署流程
+# Kubernetes 集群部署流程
 
 kubeadm部署集群  
 kubectl命令行工具进行管理  
