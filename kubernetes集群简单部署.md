@@ -28,9 +28,12 @@
 ### 1.关闭swap
 
 ```shell
-sudo swapoff -a
-# 永久关闭,注释掉swap挂载这一行可以永久关闭swap分区
-sudo vim /etc/fstab
+# 临时关闭
+swapoff -a
+
+# 永久关闭，注释掉swap分区即可
+vim /etc/fstab
+#UUID=65c9f92d-4828-4d46-bf19-fb78a38d2fd1 swap                    swap    defaults        0 0
 ```
 
 ### 2.关闭SELinux
