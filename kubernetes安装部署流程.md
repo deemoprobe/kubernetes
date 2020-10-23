@@ -1,4 +1,4 @@
-# Kubernetes 集群方案
+# Kubernetes 安装部署流程
 
 kubeadm部署集群  
 kubectl命令行工具进行管理  
@@ -6,9 +6,9 @@ kubelet作为后台进程存在
 
 ## 软件环境
 
-虚拟机： VMware® Workstation Pro 16
-操作系统：CentOS Linux release 8.2.2004
-操作用户：非root用户(可先将用户加入sudo)
+虚拟机： VMware® Workstation Pro 16  
+操作系统：CentOS Linux release 8.2.2004  
+操作用户：非root用户(可先将用户加入sudo)  
 
 ## 资源分配
 
