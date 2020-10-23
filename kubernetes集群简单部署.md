@@ -1,14 +1,14 @@
 # Kubernetes 集群部署流程
 
-kubeadm部署集群  
-kubectl命令行工具进行管理  
-kubelet作为后台进程存在
+- `kubeadm`部署集群  
+- `kubectl`命令行工具进行管理  
+- `kubelet`作为后台进程存在
 
-## 软件环境
+## 环境说明
 
-虚拟机： VMware® Workstation Pro 16  
-操作系统：CentOS Linux release 8.2.2004  
-操作用户：非root用户(可先将用户加入sudo)  
+- 虚拟机： VMware® Workstation Pro 16  
+- 操作系统：CentOS Linux release 8.2.2004  
+- 操作用户：非root用户(可先将用户加入sudoers)  
 
 ## 资源分配
 
@@ -22,8 +22,8 @@ kubelet作为后台进程存在
 
 ## 操作步骤
 
-下面1-8步骤所有节点都要执行, 9-10在master节点执行, 11在node节点执行  
-如果9-11有报错, 先根据报错信息尝试解决, 无法解决时, 可以`kubeadm reset --force`重置集群重新配置
+下面 1-8 步骤所有节点都要执行, 9-10 在master节点执行, 11 在node节点执行  
+如果 9-11 有报错, 先根据报错信息尝试解决, 无法解决时, 可以`kubeadm reset --force`重置集群重新配置
 
 ### 1.关闭swap
 
@@ -174,7 +174,9 @@ k8s-master   NotReady   master   28m   v1.19.3
 
 ### 10. 配置calico网络
 
-网络方案也可以选择其他(例如 flannel等)
+在master节点上执行
+
+网络方案也可以选择其他(例如：flannel等)
 
 ```shell
 sudo kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
@@ -186,6 +188,8 @@ k8s-master   Ready    master   45m   v1.19.3
 ```
 
 ### 11. node节点加入集群
+
+在node节点上执行
 
 ```shell
 # 根据kubeadm init最后提示
@@ -207,9 +211,9 @@ sudo kubectl create namespace test
 sudo kubectl get namespace
 
 # 创建nginx实例并开放端口
-kubectl create deployment nginx --image=nginx
-kubectl expose deployment nginx --port=80 --type=NodePort
-kubectl get pod,svc
+sudo kubectl create deployment nginx --image=nginx
+sudo kubectl expose deployment nginx --port=80 --type=NodePort
+sudo kubectl get pod,svc
 NAME                        READY   STATUS    RESTARTS   AGE
 pod/nginx-f89759699-9265g   1/1     Running   0          5m30s
 
