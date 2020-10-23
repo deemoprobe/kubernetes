@@ -63,13 +63,16 @@ sudo vi /etc/hosts
 192.168.3.15  k8s-node2
 ```
 
-### 5. 将桥接的IPV4流量传递到iptables的链
+### 5. 配置流量
+
+将桥接的流量传递到iptables的链
 
 ```shell
-sudo cat > /etc/sysctl.d/k8s.conf << EOF
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
 EOF
+sudo sysctl --system
 ```
 
 ### 6. 部署Docker
