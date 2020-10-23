@@ -214,7 +214,7 @@ NAME                        READY   STATUS    RESTARTS   AGE
 pod/nginx-f89759699-9265g   1/1     Running   0          5m30s
 
 NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
-service/kubernetes   ClusterIP   x.x.x.x          <none>        443/TCP        62m
-service/nginx        NodePort    x.x.x.x          <none>        80:30806/TCP   2m29s
+service/kubernetes   ClusterIP    x.x.x.x         <none>      443/TCP        62m
+service/nginx        NodePort     x.x.x.x         <none>      80:30806/TCP   2m29s
 # 在浏览器输入http://IP:30806/ 访问nginx
 ```
