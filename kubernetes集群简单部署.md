@@ -14,11 +14,11 @@
 
 ### 节点准备
 
-| 主机节点名称 |      IP      | CPU核心数 | 内存大小 | 磁盘大小 | 系统版本 |
-| :----------: | :----------: | :-------: | :------: | :------: | :------: |
-|  k8s-master  | 192.168.3.13 |     2     |    4G    |   150G   | centos 8 |
-|  k8s-node1   | 192.168.3.14 |     2     |    3G    |   100G   | centos 8 |
-|  k8s-node2   | 192.168.3.15 |     2     |    3G    |   100G   | centos 8 |
+| 主机节点名称 |      IP      | CPU核心数 | 内存大小 | 磁盘大小 |
+| :----------: | :----------: | :-------: | :------: | :------: |
+|  k8s-master  | 192.168.3.13 |     2     |    4G    |   150G   |
+|  k8s-node1   | 192.168.3.14 |     2     |    3G    |   100G   |
+|  k8s-node2   | 192.168.3.15 |     2     |    3G    |   100G   |
 
 ## 操作步骤
 
@@ -48,6 +48,7 @@ setenforce 0
 ```shell
 sudo systemctl stop firewalld
 sudo systemctl disable firewalld
+sudo systemctl status firewalld
 ```
 
 ### 4. 添加主机信息
@@ -206,6 +207,8 @@ NAME         STATUS   ROLES    AGE     VERSION
 k8s-master   Ready    master   52m     v1.19.3
 k8s-nnode1   Ready    <none>   2m29s   v1.19.3
 k8s-nnode2   Ready    <none>   2m3s    v1.19.3
+
+# namespace
 sudo kubectl get namespace
 sudo kubectl create namespace test
 sudo kubectl get namespace
@@ -218,7 +221,7 @@ NAME                        READY   STATUS    RESTARTS   AGE
 pod/nginx-f89759699-9265g   1/1     Running   0          5m30s
 
 NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
-service/kubernetes   ClusterIP    x.x.x.x         <none>      443/TCP        62m
-service/nginx        NodePort     x.x.x.x         <none>      80:30806/TCP   2m29s
+service/kubernetes   ClusterIP    x.x.x.x         <none>      443/TCP        12m
+service/nginx        NodePort     x.x.x.x         <none>      80:10086/TCP   1m15s
 # 在浏览器输入http://IP:30806/ 访问nginx
 ```
