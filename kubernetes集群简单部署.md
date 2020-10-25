@@ -219,6 +219,7 @@ k8s-nnode2   Ready    <none>   2m3s    v1.19.3
 kubectl get namespace
 kubectl create namespace test
 kubectl get namespace
+kubectl delete namespace test
 
 # 创建nginx实例并开放端口
 kubectl create deployment nginx --image=nginx
