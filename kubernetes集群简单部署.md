@@ -156,7 +156,7 @@ kubeadm init --kubernetes-version=1.19.3  \
 --apiserver-advertise-address=192.168.3.13   \
 --image-repository registry.aliyuncs.com/google_containers  \
 --service-cidr=192.168.0.0/16 \
-#--pod-network-cidr=10.122.0.0/16
+--pod-network-cidr=192.168.0.0/16
 # 记录好输出信息Your Kubernetes control-plane has initialized successfully!后十几行
 
 # 按照提示执行下面步骤
