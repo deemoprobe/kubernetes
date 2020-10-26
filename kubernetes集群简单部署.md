@@ -106,15 +106,18 @@ mkdir -p /etc/docker
 vi /etc/docker/daemon.json
 # your_id根据自己申请的阿里镜像加速器id来配置
 {
-  --registry-mirror=https://{your_id}.mirror.aliyuncs.com
+  "registry-mirror": ["https://{your_id}.mirror.aliyuncs.com"]
 }
 # docker文件驱动改成 systemd
 vim /etc/docker/daemon.json
 {
-  "exec-opts": ["native.cgroupdriver=systemd"]
-  --registry-mirror=https://{your_id}.mirror.aliyuncs.com
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "registry-mirror": ["https://{your_id}.mirror.aliyuncs.com"]
 }
 # 重启docker
+systemctl restart docker
+# 如果启动失败,强制加载再启动试试
+systemctl reset-failed docker
 systemctl restart docker
 # 查看docker配置信息
 docker info
@@ -138,7 +141,7 @@ EOF
 ### 8. 安装kubernetes
 
 ```shell
-yum install -y kubelet kubeadm kubectl --nobest
+yum install -y kubelet kubeadm kubectl
 # 如果gpg检查失败,可以跳过gpg检查进行安装
 yum install -y --nogpgcheck kubelet kubeadm kubectl
 # 开机启动
@@ -156,7 +159,7 @@ kubeadm init --kubernetes-version=1.19.3  \
 --apiserver-advertise-address=192.168.3.13   \
 --image-repository registry.aliyuncs.com/google_containers  \
 --service-cidr=192.168.0.0/16 \
-#--pod-network-cidr=10.122.0.0/16
+--pod-network-cidr=192.168.0.0/16
 # 记录好输出信息Your Kubernetes control-plane has initialized successfully!后十几行
 
 # 按照提示执行下面步骤
@@ -207,6 +210,8 @@ kubeadm join 192.168.3.13:6443 --token vmbhd0.e4cszyn6ozqv9tet \
 
 ## 测试集群
 
+master节点执行
+
 ```shell
 # 查看集群状态
 kubectl get nodes
@@ -231,4 +236,9 @@ NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
 service/kubernetes   ClusterIP    x.x.x.x         <none>      443/TCP        12m
 service/nginx        NodePort     x.x.x.x         <none>      80:10086/TCP   1m15s
 # 在浏览器输入http://IP:30806/ 访问nginx
+
+# 增加node节点的节点role名称
+kubectl label nodes k8s-node1 node-role.kubernetes.io/node=
+# 删除node节点的节点role名称
+kubectl label nodes k8s-node1 node-role.kubernetes.io/node-
 ```
