@@ -65,14 +65,13 @@ vi /etc/hosts
 
 ### 5. 配置流量
 
-将桥接的流量传递到iptables的链
+将流量传递到iptables链
 
 ```shell
 cat <<EOF | tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
 EOF
-# 查看配置
 sysctl --system
 ```
 
@@ -104,7 +103,7 @@ docker version
 # 配置阿里docker镜像加速器
 mkdir -p /etc/docker
 vi /etc/docker/daemon.json
-# your_id根据自己申请的阿里镜像加速器id来配置
+# {your_id} 根据自己申请的阿里镜像加速器id来配置
 {
   "registry-mirror": ["https://{your_id}.mirror.aliyuncs.com"]
 }
@@ -235,8 +234,8 @@ pod/nginx-f89759699-9265g   1/1     Running   0          5m30s
 
 NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
 service/kubernetes   ClusterIP    x.x.x.x         <none>      443/TCP        12m
-service/nginx        NodePort     x.x.x.x         <none>      80:10086/TCP   1m15s
-# 在浏览器输入http://IP:30806/ 访问nginx
+service/nginx        NodePort     x.x.x.x         <none>      80:30086/TCP   1m15s
+# 在浏览器输入http://IP:30086/ 访问nginx
 
 # 增加node节点的节点role名称
 kubectl label nodes k8s-node1 node-role.kubernetes.io/node=

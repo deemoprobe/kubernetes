@@ -19,7 +19,7 @@ kubectl describe pods my-pod
 kubectl get pod -w
 ```
 
-可以看到一个 namespace 中所有的 pod 的 phase 变化，请参考 [Pod 的生命周期](../concepts/pod-lifecycle.md)。
+可以看到一个 namespace 中所有的 pod 的 phase 变化。
 
 - 查看 Pod 的日志
 
