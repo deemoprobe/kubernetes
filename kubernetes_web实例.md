@@ -143,3 +143,105 @@ firewall-cmd --zone=public --add-port=30001/tcp --permanent
 firewall-cmd --reload
 systemctl stop firewalld
 ```
+
+## 台式机未配置
+
+```shell
+  cat /etc/sysctl.d/k8s.conf
+  sysctl --system /etc/sysctl.d/k8s.conf
+  sudo modprobe br_netfilter
+  lsmod | grep br_netfilter
+
+[root@k8s-master manifests]# sysctl --system
+* Applying /usr/lib/sysctl.d/00-system.conf ...
+net.bridge.bridge-nf-call-ip6tables = 0
+net.bridge.bridge-nf-call-iptables = 0
+net.bridge.bridge-nf-call-arptables = 0
+* Applying /usr/lib/sysctl.d/10-default-yama-scope.conf ...
+kernel.yama.ptrace_scope = 0
+* Applying /usr/lib/sysctl.d/50-default.conf ...
+kernel.sysrq = 16
+kernel.core_uses_pid = 1
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.accept_source_route = 0
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.default.promote_secondaries = 1
+net.ipv4.conf.all.promote_secondaries = 1
+fs.protected_hardlinks = 1
+fs.protected_symlinks = 1
+* Applying /etc/sysctl.d/99-sysctl.conf ...
+net.ipv4.ip_forward = 1
+* Applying /etc/sysctl.d/k8s.conf ...
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+* Applying /etc/sysctl.conf ...
+net.ipv4.ip_forward = 1
+
+[root@k8s-master manifests]# netstat -lnt
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State
+tcp        0      0 127.0.0.1:10248         0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:10249         0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:9099          0.0.0.0:*               LISTEN
+tcp        0      0 192.168.43.236:2379     0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:2379          0.0.0.0:*               LISTEN
+tcp        0      0 192.168.43.236:2380     0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:2381          0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:30993           0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:30001           0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:10257         0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:179             0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:10259         0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:25            0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:36636         0.0.0.0:*               LISTEN
+tcp6       0      0 :::10250                :::*                    LISTEN
+tcp6       0      0 :::6443                 :::*                    LISTEN
+tcp6       0      0 :::10256                :::*                    LISTEN
+tcp6       0      0 :::22                   :::*                    LISTEN
+tcp6       0      0 ::1:25                  :::*                    LISTEN
+
+[root@k8s-master manifests]# firewall-cmd --list-all
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens32
+  sources: 
+  services: dhcpv6-client ssh
+  ports: 30001/tcp 8090/tcp
+  protocols:
+  masquerade: no
+  forward-ports:
+  source-ports:
+  icmp-blocks:
+  rich rules:
+
+# 两个文件里均配置net.ipv4.ip_forward=1
+[root@k8s-master sysctl.d]# ls
+99-sysctl.conf  k8s.conf
+
+# node节点
+[root@k8s-node1 ~]# netstat -lnt
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State
+tcp        0      0 0.0.0.0:30993           0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:30001           0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:179             0.0.0.0:*               LISTEN
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:25            0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:10248         0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:10249         0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:38858         0.0.0.0:*               LISTEN
+tcp        0      0 127.0.0.1:9099          0.0.0.0:*               LISTEN
+tcp6       0      0 :::10256                :::*                    LISTEN
+tcp6       0      0 :::22                   :::*                    LISTEN
+tcp6       0      0 ::1:25                  :::*                    LISTEN
+tcp6       0      0 :::10250                :::*                    LISTEN
+
+# node节点仅配置了下面这个流量链路
+[root@k8s-node1 sysctl.d]# cat k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+```
