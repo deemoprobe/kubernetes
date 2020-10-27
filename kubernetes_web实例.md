@@ -208,7 +208,7 @@ public (active)
   target: default
   icmp-block-inversion: no
   interfaces: ens32
-  sources: 
+  sources:
   services: dhcpv6-client ssh
   ports: 30001/tcp 8090/tcp
   protocols:
