@@ -257,4 +257,7 @@ tcp6       0      0 :::10250                :::*                    LISTEN
 [root@k8s-node1 sysctl.d]# cat k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
+
+# 发现99---conf是sysctl.conf的软连接
+lrwxrwxrwx. 1 root root 14 Oct 21 01:34 /etc/sysctl.d/99-sysctl.conf -> ../sysctl.conf
 ```

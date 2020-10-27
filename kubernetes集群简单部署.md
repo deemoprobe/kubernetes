@@ -216,8 +216,8 @@ master节点执行
 kubectl get nodes
 NAME         STATUS   ROLES    AGE     VERSION
 k8s-master   Ready    master   52m     v1.19.3
-k8s-nnode1   Ready    <none>   2m29s   v1.19.3
-k8s-nnode2   Ready    <none>   2m3s    v1.19.3
+k8s-node1    Ready    <none>   2m29s   v1.19.3
+k8s-node2    Ready    <none>   2m3s    v1.19.3
 
 # namespace
 kubectl get namespace
