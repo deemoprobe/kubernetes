@@ -13,7 +13,8 @@ cd /etc/kubernetes/manifests
 vi mysql_rc.yaml
 
 apiVersion: v1
-# 副本控制器RC
+# 定义为 RC (副本控制器)
+# ReplicationSet目前在替代ReplicationController的写法,意义相同
 kind: ReplicationController
 metadata:
   # RC的名称,全局唯一
