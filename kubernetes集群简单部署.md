@@ -203,6 +203,16 @@ kubectl get pods -n kube-system
 kubectl get nodes
 NAME         STATUS   ROLES    AGE   VERSION
 k8s-master   Ready    master   45m   v1.19.3
+
+# 查看配置各组件信息configmap
+[root@k8s-master ~]# kubectl get -n kube-system configmap
+NAME                                 DATA   AGE
+calico-config                        4      29m
+coredns                              1      29m
+extension-apiserver-authentication   6      29m
+kube-proxy                           2      29m
+kubeadm-config                       2      29m
+kubelet-config-1.19                  1      29m
 ```
 
 ### 11. node节点加入集群
