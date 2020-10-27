@@ -152,6 +152,19 @@ systemctl stop firewalld
   sudo modprobe br_netfilter
   lsmod | grep br_netfilter
 
+[root@k8s-master manifests]# kubectl get po,svc
+NAME                         READY   STATUS    RESTARTS   AGE
+pod/mysql-hdg66              1/1     Running   2          19h
+pod/myweb-ctzhn              1/1     Running   2          19h
+pod/myweb-dm94j              1/1     Running   2          19h
+pod/nginx-6799fc88d8-xj4c4   1/1     Running   3          23h
+
+NAME                 TYPE        CLUSTER-IP        EXTERNAL-IP   PORT(S)          AGE
+service/kubernetes   ClusterIP   192.168.0.1       <none>        443/TCP          23h
+service/mysql        ClusterIP   192.168.141.145   <none>        3306/TCP         19h
+service/myweb        NodePort    192.168.115.169   <none>        8080:30001/TCP   19h
+service/nginx        NodePort    192.168.94.34     <none>        80:30993/TCP     23h
+
 [root@k8s-master manifests]# sysctl --system
 * Applying /usr/lib/sysctl.d/00-system.conf ...
 net.bridge.bridge-nf-call-ip6tables = 0
