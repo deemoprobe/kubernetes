@@ -5,6 +5,8 @@
 ```shell
 # 开放端口,将nginx服务的8080端口映射到本地30080端口
 kubectl port-forward --address 0.0.0.0 pod/nginx-6799fc88d8-xj4c4 30080:8080
+# pod容器内和本地传输文件
+kubectl cp nginx:db2379282hbbdsv:/etc/fstab /tmp
 ```
 
 ## 1. kubectl apply
