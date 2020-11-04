@@ -14,13 +14,13 @@ kubectl cp nginx:db2379282hbbdsv:/etc/fstab /tmp
 - 以文件或标准输入为准应用或更新资源
 
 ```shell
-# 使用 example-service.yaml 中的定义创建服务。
+# 使用 example-service.yaml 中的定义创建服务
 kubectl apply -f example-service.yaml
 
-# 使用 example-controller.yaml 中的定义创建 replication controller。
+# 使用 example-controller.yaml 中的定义创建 replication controller
 kubectl apply -f example-controller.yaml
 
-# 使用 <directory> 路径下的任意 .yaml, .yml, 或 .json 文件 创建对象。
+# 使用 <directory> 路径下的任意 .yaml, .yml, 或 .json 文件 创建对象
 kubectl apply -f <directory>
 ```
 
@@ -29,27 +29,23 @@ kubectl apply -f <directory>
 - 列出一个或多个资源
 
 ```shell
-# 以纯文本输出格式列出所有 pod。
+# 以纯文本输出格式列出所有 pod
 kubectl get pods
 
-# 以纯文本输出格式列出所有 pod，并包含附加信息(如节点名)。
+# 以纯文本输出格式列出所有 pod，并包含附加信息(如节点名)
 kubectl get pods -o wide
 
-# 以纯文本输出格式列出具有指定名称的副本控制器。提示：您可以使用别名 'rc' 缩短和替换 'replicationcontroller' 资源类型。
-kubectl get replicationcontroller <rc-name>
+# 以纯文本输出格式列出具有指定名称的副本控制器
+kubectl get rc <rc-name>
 
-# 以纯文本输出格式列出所有副本控制器和服务。
-kubectl get rc,services
+# 以纯文本输出格式列出所有副本控制器和服务
+kubectl get rc,svc
 
-# 以纯文本输出格式列出所有守护程序集，包括未初始化的守护程序集。
-kubectl get ds --include-uninitialized
+# 列出在节点 k8s-node1 上运行的所有 pod
+kubectl get pods --field-selector=spec.nodeName=k8s-node1
 
-# 列出在节点 server01 上运行的所有 pod
-kubectl get pods --field-selector=spec.nodeName=server01
-
-# 将单个 pod 的详细信息输出为 YAML 格式的对象：
-
-kubectl get pod web-pod-13je7 -o yaml
+# 将单个 pod 的详细信息输出为 YAML 格式的对象
+kubectl get pod myweb-ctzhn -o yaml
 
 ```
 
