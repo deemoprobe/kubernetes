@@ -130,6 +130,8 @@ kubectl create -f myweb_svc.yaml
 
 ## 访问结果
 
+访问地址：IP:30001/demo/
+
 ![20201026143020](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201026143020.png)
 
 ## 问题总结
