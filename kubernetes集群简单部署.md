@@ -179,7 +179,7 @@ docker images
 
 # kube-apiserver默认只启动安全访问接口6443，而不启动非安装访问接口8080，kubectl是通过8080端口访问k8s kubelet的，所以要修改配置文件，使其支持8080端口访问
 vim /etc/kubernetes/manifests/kube-apiserver.yaml
--insecure-port=8080
+- --insecure-port=8080
 
 # 启动kubelet
 systemctl start kubelet
