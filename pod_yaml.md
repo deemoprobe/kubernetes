@@ -2,7 +2,7 @@
 
 ## YAML特点
 
-YAML 的英文全称是：”Yet Another Markup Language”（仍是一种置标语言）
+YAML 的英文全称是："Yet Another Markup Language"
 
 YAML有下面特点：
 
@@ -43,152 +43,68 @@ spec:                           #必选，对象【如pod】的详细定义
 
 ## 实例
 
-### 实例说明
+Pod类型：
 
-创建运行在Tomcat里面的Web APP, 实现JSP页面通过jdbc直接访问MySQL数据库在页面上展示数据.  
-需要两个容器: Web APP 和 MySQL
+- 单容器pod
+- 多容器pod
 
-### 创建MySQL
+### 创建单容器pod
 
-```shell
-cd /etc/kubernetes/manifests
-# 创建RC
-vi mysql_rc.yaml
-
-apiVersion: v1
-# 定义为 RC (副本控制器)
-# ReplicationSet目前在替代ReplicationController的写法,意义相同
-kind: ReplicationController
-metadata:
-  # RC的名称,全局唯一
-  name: mysql
-spec:
-  # 希望创建的pod个数
-  replicas: 1
-  selector:
-    # 选择符合该标签的pod
-    app: mysql
-  # 根据模板下的定义来创建pod
-  template:
-    metadata:
-      labels:
-        # pod的标签,对应RC的selector
-        app: mysql
-    # 定义pod规则
-    spec:
-      # pod内容器的定义
-      containers:
-      # 容器名称
-      - name: mysql
-        # 容器所使用的的镜像(不指定版本的话就默认拉取最新版)
-        # 由于最新版驱动的问题, 所以最好使用指定版本
-        image: mysql:5.6
-        ports:
-        # 开放的端口号
-        - containerPort: 3306
-        # 容器环境变量
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          value: "123456"
-
-kubectl create -f mysql_rc.yaml
-
-# 创建 SVC
-vi mysql_svc.yaml
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: mysql
-spec:
-  ports:
-    - port: 3306
-  selector:
-    app: mysql
-
-kubectl create -f mysql_svc.yaml
-
-[root@k8main manifests]# kubectl get pods,svc
-NAME                         READY   STATUS    RESTARTS   AGE
-pod/mysql-8d27z              1/1     Running   0          6m42s
-
-NAME                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE
-service/mysql        ClusterIP   192.168.68.128   <none>        3306/TCP       10s
-
-# 查看pod状态
-kubectl describe po mysql
-```
-
-### 创建 MyWeb
+可以使用kubctl run命令简单地创建
 
 ```shell
-# 创建RC
-vi myweb_rc.yaml
+$ kubectl run <name of pod> --image=<name of the image from docker>
 
-apiVersion: v1
-kind: ReplicationController
-metadata:
-  name: myweb
-spec:
-  replicas: 2
-  selector:
-    app: myweb
-  template:
-    metadata:
-      labels:
-        app: myweb
-    spec:
-      containers:
-      - name: myweb
-        image: kubeguide/tomcat-app:v1
-        ports:
-        - containerPort: 8080
-        env:
-        - name: MYSQL_SERVICE_HOST
-          # 这里的IP是名为MySQL的pod虚拟IP(CLUSTER-IP)
-          value: 192.168.68.128
-        - name: MYSQL_SERVICE_PORT
-          value: "3306"
-
-kubectl create -f myweb_rc.yaml
-
-# 创建 SVC
-vi myweb_svc.yaml
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: myweb
-spec:
-  selector:
-    app: myweb
-  type: NodePort
-  ports:
-    # 本地服务的8080端口映射到外部端口30001
-    - port: 8080
-      nodePort: 30001
-
-kubectl create -f myweb_svc.yaml
+# 示例-我们将创建一个带有tomcat映像的容器
+$ kubectl run tomcat --image = tomcat:8.0
 ```
 
-### 访问结果
-
-访问地址：IP:30001/demo/
-
-![20201026143020](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201026143020.png)
-
-### 问题总结
-
-1. MySQL版本需要选择5.6
-2. 端口访问不通
+也可以通过创建yaml文件，然后运行kubectl create命令来完成此操作。
 
 ```shell
-# 先打开防火墙, 开放端口再关闭
-systemctl start firewalld
-firewall-cmd --zone=public --add-port=30001/tcp --permanent
-firewall-cmd --reload
-systemctl stop firewalld
+apiVersion: v1
+kind: Pod
+metadata:
+   name: Tomcat
+spec:
+  containers:
+  - name: Tomcat
+    image: tomcat: 8.0
+    ports:
+      containerPort: 8080
+    imagePullPolicy: Always
+
+# 创建上述yaml文件后，我们将使用tomcat.yml名称保存该文件，然后运行create命令运行该文档。
+$ kubectl create –f tomcat.yml
+
+# 它将创建一个名为tomcat的pod。我们可以将describe命令与kubectl一起使用来描述pod。
+
 ```
+
+### 创建多容器pod
+
+使用带有容器定义的yaml邮件创建多容器容器。
+
+```shell
+apiVersion: v1
+kind: Pod
+metadata:
+   name: Tomcat
+spec:
+  containers:
+  - name: Tomcat
+    image: tomcat: 8.0
+    ports:
+      containerPort: 8081
+    imagePullPolicy: Always
+  - name: Database
+    image: mongoDB
+    ports:
+      containerPort: 8091
+    imagePullPolicy: Always
+```
+
+在上面的代码中，我们创建了一个pod，其中包含两个容器，一个容器用于tomcat，另一个容器用于MongoDB。
 
 ## Pod yaml配置详解
 
