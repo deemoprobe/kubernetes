@@ -1,5 +1,14 @@
 # 1. docker常用命令
 
+```todo
+todo: 1.同步插件
+TODO: 2.B站docker继续学习
+note: note
+done: 镜像命令
+fixme: 无
+tag: 1.0
+```
+
 ## 1.1. 基础
 
 ```shell
