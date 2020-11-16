@@ -1,6 +1,6 @@
-# docker常用命令
+# 1. docker常用命令
 
-## 基础
+## 1.1. 基础
 
 ```shell
 # 查看docker版本
@@ -29,7 +29,7 @@ docker exec -it ID bash
 
 ```
 
-## 镜像命令
+## 1.2. 镜像命令
 
 - REPOSITORY: 镜像的仓库源
 - TAG: 镜像标签
@@ -37,7 +37,7 @@ docker exec -it ID bash
 - CREATED: 镜像已创建时间
 - SIZE: 镜像大小
 
-### docker image
+### 1.2.1. docker image
 
 ```shell
 # 查看镜像
@@ -50,7 +50,7 @@ docker images -q
 docker images -qa
 ```
 
-### docker search
+### 1.2.2. docker search
 
 ```shell
 # 从Docker Hub上查询已存在镜像
@@ -62,7 +62,7 @@ docker search -s 10 IMAGE
 docker search --filter=stars=15 IMAGE
 ```
 
-### docker pull
+### 1.2.3. docker pull
 
 ```shell
 # 从配置好的仓库拉取镜像, 未配置的话默认从Docker Hub上获取
@@ -71,7 +71,7 @@ docker pull IMAGE  <==>  docker pull IMAGE:latest
 docker pull IMAGE:TAG
 ```
 
-### docker rmi
+### 1.2.4. docker rmi
 
 ```shell
 # 删除最新版本镜像
@@ -97,9 +97,9 @@ Untagged: hello-world@sha256:8c5aeeb6a5f3ba4883347d3747a7249f491766ca1caa47e5da5
 Deleted: sha256:bf756fb1ae65adf866bd8c456593cd24beb6a0a061dedf42b26a993176745f6b
 ```
 
-## 容器命令
+## 1.3. 容器命令
 
-### docker run
+### 1.3.1. docker run
 
 docker run [OPTIONS] IMAGE_ID [COMAND] [ARG...]
 
@@ -131,7 +131,7 @@ CONTAINER ID        IMAGE                                               COMMAND 
 7869f8b3be3f        0d120b6ccaa8                                        "/bin/bash"              18 seconds ago      Up 17 seconds                           mycentos01
 ```
 
-### docker ps
+### 1.3.2. docker ps
 
 docker ps [OPTIONS]
 
@@ -142,7 +142,7 @@ OPTIONS字段说明:
 - -n [num] 显示最近创建的num个容器
 - -q 显示正在运行容器的ID
 
-### 退出容器
+### 1.3.3. 退出容器
 
 - exit 退出并关闭容器
 - Ctrl+P+Q 退出但不关闭容器
