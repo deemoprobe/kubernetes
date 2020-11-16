@@ -96,3 +96,53 @@ Untagged: hello-world:latest
 Untagged: hello-world@sha256:8c5aeeb6a5f3ba4883347d3747a7249f491766ca1caa47e5da5dfcf6b9b717c0
 Deleted: sha256:bf756fb1ae65adf866bd8c456593cd24beb6a0a061dedf42b26a993176745f6b
 ```
+
+## 容器命令
+
+### docker run
+
+docker run [OPTIONS] IMAGE_ID [COMAND] [ARG...]
+
+OPTIONS字段说明:
+
+- --name=自定义容器名
+- -d 后台运行容器
+- -it 新建伪终端交互运行容器
+- -P 分配端口映射
+- -p 指定端口映射, 有以下四种方式
+  - ip:hostPort:containerPort
+  - ip::containerPort
+  - hostPort:containerPort
+  - containerPort
+
+```shell
+# 先获取镜像
+[root@k8s-master ~]# docker pull centos
+[root@k8s-master ~]# docker images
+REPOSITORY                                                        TAG                 IMAGE ID            CREATED             SIZE
+centos                                                            latest              0d120b6ccaa8        3 months ago        215MB
+# 启动运行CentOS容器(本地有该镜像就直接启动, 没有就自动拉取)
+[root@k8s-master ~]# docker run -it 0d120b6ccaa8
+[root@5ffb334fc398 /]#
+exit
+[root@k8s-master ~]# docker run -it --name=mycentos01 0d120b6ccaa8
+[root@k8s-master ~]# docker ps
+CONTAINER ID        IMAGE                                               COMMAND                  CREATED             STATUS              PORTS               NAMES
+7869f8b3be3f        0d120b6ccaa8                                        "/bin/bash"              18 seconds ago      Up 17 seconds                           mycentos01
+```
+
+### docker ps
+
+docker ps [OPTIONS]
+
+OPTIONS字段说明:
+
+- -a 列出所有正在运行的容器和历史上运行过的容器
+- -l 显示最近运行过的容器
+- -n [num] 显示最近创建的num个容器
+- -q 显示正在运行容器的ID
+
+### 退出容器
+
+- exit 退出并关闭容器
+- Ctrl+P+Q 退出但不关闭容器
