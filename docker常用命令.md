@@ -1,14 +1,5 @@
 # 1. docker常用命令
 
-```shell
-# todo: 1.同步插件
-# TODO: 2.B站docker继续学习
-# note: note
-# done: 镜像命令
-# fixme: 无
-# tag: 1.0
-```
-
 ## 1.1. 基础
 
 ```shell
@@ -153,5 +144,75 @@ OPTIONS字段说明:
 
 ### 1.3.3. 退出容器
 
-- exit 退出并关闭容器
-- Ctrl+P+Q 退出但不关闭容器
+- exit 退出并关闭容器(适用于docker run命令启动的容器, docker exec 进入容器exit退出后不影响容器状态)
+- Ctrl+P+Q 退出但不关闭容器(适用于docker run命令启动的容器)
+
+### 1.3.4. 容器启停
+
+```shell
+# 启动已停止的容器
+docker start 容器名或ID
+# 重启容器
+docker restart 容器名或ID
+# 停止容器
+docker stop 容器名或ID
+# 强制停止容器
+docker kill 容器名或ID
+```
+
+### 1.3.5. 删除容器
+
+```shell
+# 删除已停止容器
+docker rm 容器名或ID
+# 强制删除(若在运行,也会强制停止后删除)
+docker rm -f 容器名或ID
+# 删除全部容器
+docker rm -f $(docker ps -a -q)
+or
+docker ps -a -q | xargs docker rm
+```
+
+### 1.3.6. 进入正在运行的容器
+
+```shell
+# 进入正在运行的容器并交互
+docker exec -it 容器ID /bin/bash
+# 不进入正在运行的容器直接交互,比如查看根目录
+docker exec -it 容器ID ls -al /
+exit # 退出
+```
+
+### 1.3.7. 容器命令高级操作
+
+docker单独启动容器作为守护进程(后台运行), 启动后`docker ps -a`会发现已经退出了  
+原因是：docker容器运行机制决定,docker容器后台运行就必须要有一个前台进程,否则会自动退出  
+所以要解决这个问题就是将要运行的进程以前台进程的形式运行
+
+```shell
+# 启动容器作为守护进程,这样会直接退出
+docker run -d 镜像名
+# 后台运行并每两秒在前台输出一次hello
+docker run -d centos /bin/sh -c "while true;do echo hello;sleep 2;done"
+# 查看日志, 列出时间, 动态打印日志, 保留之前num行
+docker logs -f -t --tail num 容器ID
+# 实例
+[root@k8s-master ~]# docker ps | grep centos
+2a478637cb41        centos                                              "/bin/sh -c 'while t…"   13 seconds ago      Up 12 seconds                           priceless_shannon
+[root@k8s-master ~]# docker logs -t -f --tail 5 2a478637cb41
+2020-11-17T06:54:08.810582561Z hello
+2020-11-17T06:54:10.809641077Z hello
+2020-11-17T06:54:12.818141600Z hello
+2020-11-17T06:54:14.827901332Z hello
+2020-11-17T06:54:16.827602049Z hello # 下面几行是动态打印输出的
+2020-11-17T06:54:18.837423661Z hello
+2020-11-17T06:54:20.846410026Z hello
+2020-11-17T06:54:22.862299738Z hello
+...
+
+# 查看容器内运行的进程
+docker top 容器ID
+
+# 容器内传输数据到宿主机
+docker cp 容器ID:/path /宿主机path
+```
