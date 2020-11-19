@@ -33,7 +33,7 @@ rootfs(root file system),在bootfs之上。包含的就是典型Linux系统中�
 
 最大的一个好吃就是共享资源
 比如：有多个镜像都从相同的base镜像构建而来，那么宿主机只需在磁盘上保存一份base镜像,同时内存中也只需加载一份base镜像，就可以为所有容器服务了。而且镜像的每一层都可以被共享。
-![在这里插入图片描述](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/在这里插入图片描述.png)
+![20201119111557](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201119111557.png)
 
 ## 2. 镜像的特点
 
