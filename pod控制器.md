@@ -587,9 +587,9 @@ NAME       READY   STATUS      RESTARTS   AGE     IP              NODE        NO
 pi-2nlj5   0/1     Completed   0          4m54s   172.16.36.119   k8s-node1   <none>           <none>
 # 查看日志可以看到job执行的结果
 # 计算出了圆周率后1000位
-[root@k8s-master manifests]# kubectl logs pi-2nlj5
-3.14159265358979323846264338327950288419716939....省略部分输出
 ```
+
+![20201123180138](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201123180138.png)
 
 ### 2.5 CronJob
 
