@@ -441,13 +441,155 @@ kubectl rollout pause deployment/nginx-deploy
 DaemonSet 确保全部（或者一些）Node上运行一个 Pod 的副本。当有 Node 加入集群时，也会为它们新增一个 Pod，当有 Node 从集群移除时，这些 Pod 也会被回收。删除 DaemonSet 将会删除它创建的所有 Pod。
 使用 DaemonSet 的一些典型用法：
 
-运行集群存储 deamon，例如在每个 Node 上运行  glusterd、ceph
-在每个 Node 上运行日志收集 deamon，例如 fluentd、logstash
-在每个 Node 上运行监控 daemon，例如 Prometheus Node Exporter
+- 运行集群存储 deamon，例如在每个 Node 上运行  glusterd、ceph
+- 在每个 Node 上运行日志收集 deamon，例如 fluentd、logstash
+- 在每个 Node 上运行监控 daemon，例如 Prometheus Node Exporter
+
+```shell
+[root@k8s-master manifests]# kubectl explain ds
+KIND:     DaemonSet
+VERSION:  apps/v1
+
+DESCRIPTION:
+     DaemonSet represents the configuration of a daemon set.
+
+FIELDS:
+...
+# 创建yaml
+[root@k8s-master manifests]# vi daemonset-example.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: daemonset-example
+  labels:
+    app: daemonset
+spec:
+  selector:
+    matchLabels:
+      name: daemonset-example
+  template:
+    metadata:
+      labels:
+        name: daemonset-example
+    spec:
+      containers:
+      - name: daemonset-example
+        image: wangyanglinux/myapp:v1
+[root@k8s-master manifests]# kubectl get po
+NAME                      READY   STATUS    RESTARTS   AGE
+daemonset-example-f57kg   1/1     Running   0          25s
+[root@k8s-master manifests]# kubectl get ds
+NAME                DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
+daemonset-example   1         1         1       1            1           <none>          27s
+[root@k8s-master manifests]# kubectl get po -o wide
+NAME                      READY   STATUS    RESTARTS   AGE   IP              NODE        NOMINATED NODE   READINESS GATES
+daemonset-example-f57kg   1/1     Running   0          74s   172.16.36.118   k8s-node1   <none>           <none>
+[root@k8s-master manifests]# curl 172.16.36.118
+Hello MyApp | Version: v1 | <a href="hostname.html">Pod Name</a>
+[root@k8s-master manifests]# kubectl describe po daemonset-example-f57kg
+Name:         daemonset-example-f57kg
+Namespace:    default
+Priority:     0
+Node:         k8s-node1/192.168.43.20
+Start Time:   Mon, 23 Nov 2020 04:38:37 -0500
+Labels:       controller-revision-hash=5867b74f5c
+              name=daemonset-example
+              pod-template-generation=1
+Annotations:  cni.projectcalico.org/podIP: 172.16.36.118/32
+              cni.projectcalico.org/podIPs: 172.16.36.118/32
+Status:       Running
+IP:           172.16.36.118
+IPs:
+  IP:           172.16.36.118
+Controlled By:  DaemonSet/daemonset-example
+Containers:
+  daemonset-example:
+    Container ID:   docker://8f5dbe49a96a7a00a310a6ab0e442db39a55ffd67361cb6432078cc1d13dead3
+    Image:          wangyanglinux/myapp:v1
+    Image ID:       docker-pullable://wangyanglinux/myapp@sha256:9c3dc30b5219788b2b8a4b065f548b922a34479577befb54b03330999d30d513
+    Port:           <none>
+    Host Port:      <none>
+    State:          Running
+      Started:      Mon, 23 Nov 2020 04:39:00 -0500
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-64lwm (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  default-token-64lwm:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-64lwm
+    Optional:    false
+QoS Class:       BestEffort
+Node-Selectors:  <none>
+Tolerations:     node.kubernetes.io/disk-pressure:NoSchedule op=Exists
+                 node.kubernetes.io/memory-pressure:NoSchedule op=Exists
+                 node.kubernetes.io/not-ready:NoExecute op=Exists
+                 node.kubernetes.io/pid-pressure:NoSchedule op=Exists
+                 node.kubernetes.io/unreachable:NoExecute op=Exists
+                 node.kubernetes.io/unschedulable:NoSchedule op=Exists
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  2m47s  default-scheduler  Successfully assigned default/daemonset-example-f57kg to k8s-node1
+  Normal  Pulling    2m46s  kubelet            Pulling image "wangyanglinux/myapp:v1"
+  Normal  Pulled     2m24s  kubelet            Successfully pulled image "wangyanglinux/myapp:v1" in 21.955882149s
+  Normal  Created    2m24s  kubelet            Created container daemonset-example
+  Normal  Started    2m24s  kubelet            Started container daemonset-example
+```
 
 ### 2.4 Job
 
 Job 负责批处理任务，即仅执行一次的任务，它保证批处理任务的一个或多个 Pod 成功结束。
+
+```shell
+[root@k8s-master manifests]# kubectl explain job
+KIND:     Job
+VERSION:  batch/v1
+
+DESCRIPTION:
+     Job represents the configuration of a single job.
+
+FIELDS:
+...
+# 创建yaml
+[root@k8s-master manifests]# vi job-example.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+spec:
+  template:
+    metadata:
+      name: pi
+    spec:
+      containers:
+      - name: pi
+        image: perl
+        command: ["perl", "-Mbignum=bpi", "-wle", "print bpi(1000)"]
+      restartPolicy: Neve
+[root@k8s-master manifests]# kubectl get po
+NAME                      READY   STATUS      RESTARTS   AGE
+daemonset-example-f57kg   1/1     Running     0          13m
+pi-2nlj5                  0/1     Completed   0          4m
+[root@k8s-master manifests]# kubectl get job
+NAME   COMPLETIONS   DURATION   AGE
+pi     1/1           3m19s      4m15s
+[root@k8s-master manifests]# kubectl get po pi-2nlj5 -o wide
+NAME       READY   STATUS      RESTARTS   AGE     IP              NODE        NOMINATED NODE   READINESS GATES
+pi-2nlj5   0/1     Completed   0          4m54s   172.16.36.119   k8s-node1   <none>           <none>
+# 查看日志可以看到job执行的结果
+# 计算出了圆周率后1000位
+[root@k8s-master manifests]# kubectl logs pi-2nlj5
+3.14159265358979323846264338327950288419716939....省略部分输出
+```
 
 ### 2.5 CronJob
 
