@@ -89,6 +89,8 @@ kubectl delete pods,services -l name=<label-name> --include-uninitialized
 # 删除所有 pod，包括未初始化的 pod。
 kubectl delete pods --all
 
+# 强制删除pod
+kubectl delete pod <name> --grace-period=0 --force -n <namespace>
 ```
 
 ## 5. kubectl exec
