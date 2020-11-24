@@ -1,10 +1,10 @@
 # Kubernetes Pod控制器
 
-## 1.控制器
+## 控制器
 
 Kubernetes 中内建了很多 controller（控制器），用来确保pod资源符合预期的状态，控制 Pod 的状态和行为。
 
-## 2.控制器类型
+## 控制器类型
 
 - ReplicaSet(rs)
 - Deployment(deploy)
@@ -61,7 +61,7 @@ ingresses                         ing          extensions                     tr
 ...
 ```
 
-### 2.1 ReplicaSet 和 ReplicationController
+### ReplicaSet 和 ReplicationController
 
 ReplicationController(RC)用来确保容器应用的副本数始终保持在用户定义的副本数，即如果有容器异常退出，会自动创建新的 Pod 来替代；而如果异常多出来的容器也会自动回收。
 
@@ -130,9 +130,9 @@ replicationcontroller/mysql   1         1         1       24h
 replicationcontroller/myweb   2         2         2       24h
 ```
 
-### 2.2 Deployment
+### Deployment
 
-Deployment 是一种更高级别的 API 对象，为 Pods 和 ReplicaSets 提供声明式的更新能力。它以类似于 `kubectl rolling-update` 的方式更新其底层 ReplicaSet 及其 Pod。 如果需要这种滚动更新功能，那么推荐使用 Deployment。
+Deployment 是一种更高级别的 API 对象，为 Pods 和 ReplicaSets 提供声明式的更新能力。它以类似于 `kubectl rolling-update` 的方式更新其底层 ReplicaSet 及其 Pod。 如果需要这种滚动更新功能，推荐使用 Deployment。
 
 Deployments 的典型用例：
 
@@ -211,11 +211,237 @@ nginx-deploy-559d658b74-27jn4   1/1     Running   0          11m   172.16.36.105
 nginx-deploy-559d658b74-hzdr2   1/1     Running   0          11m   172.16.36.106   k8s-node1   <none>           <none>
 # 访问nginx
 [root@k8s-master manifests]# curl 172.16.36.105
-<!DOCTYPE html>
-<html>
-<head>
+...
 <title>Welcome to nginx!</title>
 ...
+```
+
+#### 定向调度(nodeSelector)
+
+Kubernetes上kube-scheduler负责pod调度，通过内置算法实现最佳节点的调度，当然也可以指定调度的节点
+
+```shell
+# 给k8s-node1节点打上test标签
+[root@k8s-master manifests]# kubectl label nodes k8s-node1 zone=test
+node/k8s-node1 labeled
+# 查看node的标签
+[root@k8s-master ~]# kubectl get nodes k8s-node1 --show-labels
+NAME        STATUS   ROLES   AGE   VERSION   LABELS
+k8s-node1   Ready    node    13d   v1.19.3   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=k8s-node1,kubernetes.io/os=linux,node-role.kubernetes.io/node=,zone=test
+# 或者从描述里查看
+[root@k8s-master manifests]# kubectl describe node k8s-node1
+Name:               k8s-node1
+Roles:              node
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/os=linux
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=k8s-node1
+                    kubernetes.io/os=linux
+                    node-role.kubernetes.io/node=
+                    zone=test
+# 给pod加上定向调度设置
+[root@k8s-master manifests]# vi nginx-deploy.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.16.1
+        ports:
+        - containerPort: 80
+      nodeSelector:
+        zone: test
+[root@k8s-master manifests]# kubectl apply -f nginx-deploy.yaml
+deployment.apps/nginx-deploy created
+# 查看到所有的pod均部署在k8s-node1上
+[root@k8s-master manifests]# kubectl get pods -o wide
+NAME                          READY   STATUS    RESTARTS   AGE   IP              NODE        NOMINATED NODE   READINESS GATES
+nginx-deploy-79bf6fcf-5b7v6   1/1     Running   0          11s   172.16.36.126   k8s-node1   <none>           <none>
+nginx-deploy-79bf6fcf-d4hz6   1/1     Running   0          11s   172.16.36.68    k8s-node1   <none>           <none>
+nginx-deploy-79bf6fcf-thbpt   1/1     Running   0          11s   172.16.36.127   k8s-node1   <none>           <none>
+```
+
+当然也可以通过`kubectl get nodes k8s-node1 --show-labels`查到的系统标签进行定向调度
+
+#### 亲和与反亲和调度
+
+定向调度比较是一种强制分配的方式进行pod调度，推荐使用亲和性调度代替定向调度，亲和性调度有下面两种表达：
+
+- requiredDuringSchedulingIgnoredDuringExecution: hard(硬限制)，严格执行，满足规则调度，否则不调度
+- preferredDuringSchedulingIgnoredDuringExecution：soft(软限制)，尽力执行，优先满足规则调度，多个规则可用权重来决定先执行哪一个
+
+OPerator参数：
+
+- In：label的值在某个列表中
+- NotIn：label的值不在某个列表中
+- Gt：label的值大于某个值
+- Lt：label的值小于某个值
+- Exists：某个label存在
+- DoesNotExist：某个label不存在
+
+#### node亲和调度(nodeAffinity)
+
+Note: 支持的operator操作： In, NotIn, Exists, DoesNotExist, Gt, Lt. 其中，NotIn and DoesNotExist用于实现反亲和性。
+
+Note: weight范围1-100。这个涉及调度器的优选打分过程，每个node的评分都会加上这个weight，最后bind最高的node。
+
+```shell
+# 第一个规则限制只运行在amd64架构的节点上，第二个规则是尽量调度到在k8s-node1节点上
+apiVersion: v1
+kind: Pod
+metadata:
+  name: with-node-affinity
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: beta.kubernetes.io/arch
+            operator: In
+            values:
+            - amd64
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - k8s-node1
+  containers:
+  - name: with-node-affinity
+    image: k8s.gcr.io/pause:2.0
+```
+
+#### pod亲和和反亲和调度
+
+Pod的亲和性与反亲和性是基于Node节点上已经运行pod的标签(而不是节点上的标签)决定的，从而约束哪些节点适合调度pod。
+
+规则是：如果X已经运行了一个或多个符合规则Y的pod，则此pod应该在X中运行(如果是反亲和的情况下，则不应该在X中运行）。当然pod必须处在同一名称空间，不然亲和性/反亲和性无作用。  
+X是一个拓扑域，可以使用topologyKey来表示它，topologyKey 的值是node节点标签的键以便系统用来表示这样的拓扑域。当然这里也有个隐藏条件，就是node节点标签的键值相同时，才是在同一拓扑域中；如果只是节点标签名相同，但是值不同，那么也不在同一拓扑域。
+
+Pod的亲和性/反亲和性调度是根据拓扑域来界定调度的，而不是根据node节点。
+
+Pod: 支持的operator操作：In, NotIn, Exists, DoesNotExist, Gt, Lt.
+
+```shell
+# 创建参照deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-flag
+  labels:
+    seccurity: s1
+    app: nginx
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+# 亲和反亲和配置实例
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: affinity-all
+  labels:
+    app: affinity-all
+spec:
+  containers:
+  - name: affinity-all
+    image: k8s.gcr.io/pause:2.0
+  affinity:
+    # pod亲和性
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          # 由于是Pod亲和性/反亲和性；因此这里匹配规则写的是Pod的标签信息
+          matchExpressions:
+          - key: security
+            operator: In
+            values:
+            - s1
+        # 拓扑域
+        topologyKey: disk-type
+    # pod反亲和性
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          # 由于是Pod亲和性/反亲和性；因此这里匹配规则写的是Pod的标签信息
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - nginx
+        # 拓扑域
+        topologyKey: kubernetes.io/hostname
+```
+
+上面创建的deployment应满足下面规则：
+
+- 与security=s1的pod为同一种disk-type(同一种磁盘的拓扑域)
+- 不与app=nginx的pod调度在同一node节点上
+
+#### 污点和容忍(Taints和Tolerations)
+
+Taint需要和Toleration配合使用，让pod避开某些节点，除非pod创建时声明容忍策略，否则不会在有污点的节点上运行。
+
+```shell
+# 为k8s-node1设置不能调度的污点
+[root@k8s-master manifests]# kubectl taint nodes k8s-node1 test=node1:NoSchedule
+# 如果创建pod时设置容忍策略，则该pod能够（不是必须）被分配到该节点，具体能不能分配到该节点上由分配算法决定
+# 常见的容忍配置
+tolerations:
+- key: "key"
+  operator: "Equal"
+  value: "value"
+  effect: "NoSchedule"
+---
+tolerations:
+- key: "key"
+  operator: "Exists"
+  effect: "NoSchedule"
+---
+tolerations:
+- key: "key"
+  operator: "Equal"
+  value: "value"
+  effect: "NoExecute"
+  tolerationSeconds: 3600
+
+# 在yaml文件中的位置
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test
+  labels:
+    app: test
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - name: test
+        image: nginx
+      tolerations:
+      - key: "test"
+        operator: "Exists"
+        effect: "NoSchedule"
 ```
 
 #### 升级更新 Deployment
@@ -436,7 +662,7 @@ kubectl rollout pause deployment/nginx-deploy
 
 ```
 
-### 2.3 DeamonSet
+### DeamonSet
 
 DaemonSet 确保全部（或者一些）Node上运行一个 Pod 的副本。当有 Node 加入集群时，也会为它们新增一个 Pod，当有 Node 从集群移除时，这些 Pod 也会被回收。删除 DaemonSet 将会删除它创建的所有 Pod。
 使用 DaemonSet 的一些典型用法：
@@ -545,7 +771,7 @@ Events:
   Normal  Started    2m24s  kubelet            Started container daemonset-example
 ```
 
-### 2.4 Job
+### Job
 
 Job 负责批处理任务，即仅执行一次的任务，它保证批处理任务的一个或多个 Pod 成功结束。
 
@@ -591,7 +817,7 @@ pi-2nlj5   0/1     Completed   0          4m54s   172.16.36.119   k8s-node1   <n
 
 ![20201123180138](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201123180138.png)
 
-### 2.5 CronJob
+### CronJob
 
 Cron Job 管理基于时间的 Job，即：
 
@@ -603,7 +829,65 @@ Cron Job 管理基于时间的 Job，即：
 在给你写的时间点调度 Job 运行
 创建周期性运行的 Job，例如：数据库备份、发送邮件
 
-### 2.6 StatefulSet
+```shell
+[root@k8s-master manifests]# kubectl explain cj
+KIND:     CronJob
+VERSION:  batch/v1beta1
+
+DESCRIPTION:
+     CronJob represents the configuration of a single cron job.
+
+FIELDS:
+...
+# 创建cronjob yaml文件
+[root@k8s-master manifests]# vi cronjob-example.yaml
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hello
+            image: busybox
+            args:
+            - /bin/sh
+            - -c
+            - date; echo Hello CronJob
+          restartPolicy:  OnFailure
+[root@k8s-master manifests]# kubectl apply -f cronjob-example.yaml
+cronjob.batch/hello created
+[root@k8s-master manifests]# kubectl get cj
+NAME    SCHEDULE      SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+hello   */1 * * * *   False     0        44s             69s
+[root@k8s-master manifests]# kubectl get po
+NAME                     READY   STATUS      RESTARTS   AGE
+hello-1606186260-4pbtt   0/1     Completed   0          100s
+hello-1606186320-gxtkn   0/1     Completed   0          39s
+# 查看输出日志
+[root@k8s-master manifests]# kubectl logs hello-1606186260-4pbtt
+Tue Nov 24 02:51:25 UTC 2020
+Hello CronJob
+[root@k8s-master manifests]# kubectl logs hello-1606186320-gxtkn
+Tue Nov 24 02:52:26 UTC 2020
+Hello CronJob
+[root@k8s-master manifests]# kubectl get job
+NAME               COMPLETIONS   DURATION   AGE
+hello-1606186260   1/1           18s        2m42s
+hello-1606186320   1/1           18s        101s
+hello-1606186380   1/1           30s        41s
+# 删除cronjob
+[root@k8s-master manifests]# kubectl delete cronjob hello
+cronjob.batch "hello" deleted
+[root@k8s-master manifests]# kubectl get job
+No resources found in default namespace.
+```
+
+### StatefulSet
 
 StatefulSet 作为 Controller 为 Pod 提供唯一的标识，它可以保证部署和 scale 的顺序。
 StatefulSet 是为了解决有状态服务的问题（对应 Deployment 和 ReplicaSet 是为无状态服务而设计），其应用场景包括：
@@ -613,7 +897,7 @@ StatefulSet 是为了解决有状态服务的问题（对应 Deployment 和 Repl
 有序部署、有序扩展，即 Pod 是有顺序的，在部署或者扩展的时候要住所定义的顺序依次进行（即从 0 到 N-1，在下一个 Pod 运行之前所有之前的 Pod 必须都是 Running 和 Ready 状态），基于 init containers 来实现
 有序收缩，有序删除（即从 N-1 到 0 ）
 
-### 2.7 Horizontal Pod Autoscaling
+### Horizontal Pod Autoscaling(HPA)
 
 顾名思义，使 Pod 水平自动缩放，提高集群的整体资源利用率。
 Horizontal Pod Autoscaling 仅适用于 Deployment 和 ReplicaSet。在 v1 版本中仅支持根据 Pod 的 CPU 利用率扩缩容，在 v1alpha 版本中，支持根据内存和用户自定义的 metric 扩缩容。

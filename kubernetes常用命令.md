@@ -7,6 +7,8 @@
 kubectl port-forward --address 0.0.0.0 pod/nginx-6799fc88d8-xj4c4 30080:8080
 # pod容器内和本地传输文件
 kubectl cp nginx:db2379282hbbdsv:/etc/fstab /tmp
+# 查看对象的标签
+kubectl get nodes --show-labels
 ```
 
 ## 1. kubectl apply
