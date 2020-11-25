@@ -55,7 +55,7 @@ docker images -qa
 ```shell
 # 从Docker Hub上查询已存在镜像
 docker search IMAGE
-# 根据热度(stars)获取排名前10的IMAGE
+# 根据热度(stars)获取stars数在10以上的IMAGE(目前已弃用)
 docker search -s 10 IMAGE
 # 根据stars数目来搜索IMAGE
 # 查看15星以上的镜像
@@ -106,10 +106,10 @@ docker run [OPTIONS] IMAGE_ID [COMAND] [ARG...]
 OPTIONS字段说明:
 
 - --name=自定义容器名
-- -d 后台运行容器
+- -d  后台运行容器
 - -it 新建伪终端交互运行容器
-- -P 分配端口映射
-- -p 指定端口映射, 有以下四种方式
+- -P  随机分配端口映射
+- -p  指定端口映射, 有以下四种方式
   - ip:hostPort:containerPort
   - ip::containerPort
   - hostPort:containerPort
@@ -129,7 +129,41 @@ exit
 [root@k8s-master ~]# docker ps
 CONTAINER ID        IMAGE                                               COMMAND                  CREATED             STATUS              PORTS               NAMES
 7869f8b3be3f        0d120b6ccaa8                                        "/bin/bash"              18 seconds ago      Up 17 seconds                           mycentos01
+# 为nginx镜像随机分配端口映射
+[root@docker ~]# docker run -it -P nginx:1.18.0
+/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+/docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+10-listen-on-ipv6-by-default.sh: Getting the checksum of /etc/nginx/conf.d/default.conf
+10-listen-on-ipv6-by-default.sh: Enabled listen on IPv6 in /etc/nginx/conf.d/default.conf
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+/docker-entrypoint.sh: Configuration complete; ready for start up
+# 查看分配的端口
+[root@docker ~]# docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                   NAMES
+144718cdeaa8        nginx:1.18.0        "/docker-entrypoint.…"   13 seconds ago      Up 12 seconds       0.0.0.0:32768->80/tcp   thirsty_maxwell
+# 指定端口映射
+[root@docker ~]# docker run -it -p 8080:80 nginx:1.18.0
+/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+/docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+10-listen-on-ipv6-by-default.sh: Getting the checksum of /etc/nginx/conf.d/default.conf
+10-listen-on-ipv6-by-default.sh: Enabled listen on IPv6 in /etc/nginx/conf.d/default.conf
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+/docker-entrypoint.sh: Configuration complete; ready for start up
+# 查看分配的端口
+[root@docker ~]# docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                  NAMES
+4f75469bc394        nginx:1.18.0        "/docker-entrypoint.…"   19 seconds ago      Up 19 seconds       0.0.0.0:8080->80/tcp   stoic_lamarr
+# 访问nginx
+[root@docker ~]# curl localhost:8080
+...
+<title>Welcome to nginx!</title>
+...
+# 浏览器访问
 ```
+
+![20201125144623](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201125144623.png)
 
 ### 1.3.2. docker ps
 
@@ -215,4 +249,21 @@ docker top 容器ID
 
 # 容器内传输数据到宿主机
 docker cp 容器ID:/path /宿主机path
+```
+
+### 1.3.8. 镜像的定制
+
+```shell
+# 如果该容器内部做了更改，提交打包后更改也包含进去，以此完成镜像的定制
+docker commit -a="作者名" -m="提交信息" 容器ID 定制后的镜像名
+# 操作
+[root@docker ~]# docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                  NAMES
+4f75469bc394        nginx:1.18.0        "/docker-entrypoint.…"   11 minutes ago      Up 11 minutes       0.0.0.0:8080->80/tcp   stoic_lamarr
+[root@docker ~]# docker commit -a="deemoprobe" -m="Create Nginx Myself." 4f75469bc394 test/nginx:v1
+sha256:a804b4414edeb7bb4bb80c239404599d53fb9ba54ddd9687712a4a492886324f
+[root@docker ~]# docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+test/nginx          v1                  a804b4414ede        6 seconds ago       133MB
+nginx               1.18.0              2562b6bef976        6 hours ago         133MB
 ```
