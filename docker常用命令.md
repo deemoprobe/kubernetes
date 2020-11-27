@@ -267,3 +267,54 @@ REPOSITORY          TAG                 IMAGE ID            CREATED             
 test/nginx          v1                  a804b4414ede        6 seconds ago       133MB
 nginx               1.18.0              2562b6bef976        6 hours ago         133MB
 ```
+
+### 1.3.9. 高级命令
+
+- 查看docker配置信息
+
+```shell
+# 查看容器详情信息的某个字段
+docker inspect -f "{{ .首字段.子字段 }}" <ContainerNameOrId>
+# 查看容器IP地址
+[root@docker ~]# docker inspect -f "{{ .NetworkSettings.IPAddress }}" 38798985efb9
+172.17.0.2
+# 查看容器主机名
+[root@docker ~]# docker inspect -f "{{ .Config.Hostname }}" 38798985efb9
+38798985efb9
+# 查看开放的端口
+[root@docker ~]# docker inspect -f "{{ .Config.ExposedPorts }}" 38798985efb9
+map[80/tcp:{}]
+```
+
+- 查看网络
+
+```shell
+# 启动并开放nginx80端口，80端口映射到主机的1234端口
+[root@docker ~]# docker run -p 1234:80 -d nginx
+03694540d34be5f69d951f15316dbdeae63fdc60a09e1da078273d5e15cb74ff
+[root@docker ~]# docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                  NAMES
+03694540d34b        nginx               "/docker-entrypoint.…"   4 seconds ago       Up 2 seconds        0.0.0.0:1234->80/tcp   nifty_williams
+# 查看端口映射关系
+[root@docker ~]# docker port 03694540d34b 80
+0.0.0.0:1234
+# 查看nat规则
+[root@docker ~]# iptables -t nat -nL
+...
+Chain DOCKER (2 references)
+target     prot opt source               destination
+RETURN     all  --  0.0.0.0/0            0.0.0.0/0
+DNAT       tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:1234 to:172.17.0.3:80
+...
+# 若容器内部访问不了外网，检查ip_forward和SNAT/MASQUERADE
+# 开启ip_forward
+[root@docker ~]# sysctl net.ipv4.ip_forward=1
+net.ipv4.ip_forward = 1
+# 查看SNAT/MASQUERADE是否是ACCEPT
+[root@docker ~]# iptables -t nat -nL
+Chain POSTROUTING (policy ACCEPT)
+target     prot opt source               destination
+# 这条规则指定从容器内出来的包都要进行一次地址转换
+MASQUERADE  all  --  172.17.0.0/16        0.0.0.0/0
+...
+```
