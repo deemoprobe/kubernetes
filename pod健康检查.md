@@ -1,5 +1,7 @@
 # Kubernetes pod健康检查
 
+HTTP, socket, 命令三种方式实现健康检查
+
 ## LivenessProbe探针
 
 Liveness 探测让用户可以自定义判断容器是否健康的条件。如果探测失败，Kubernetes 就会重启容器。
