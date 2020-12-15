@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-configmap-volume
+spec:
+  containers:
+  - name: myapp
+    image: registry.cn-beijing.aliyuncs.com/google_registry/myapp:v1
+    command: ["/bin/sh", "-c", "sleep 600"]
+    volumeMounts:
+    - name: config-volume
+      mountPath: /etc/config
+  volumes:
+  - name: config-volume
+    configMap:
+      name: configmap-demo
+  restartPolicy: Never

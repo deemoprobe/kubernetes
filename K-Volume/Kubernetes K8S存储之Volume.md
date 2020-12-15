@@ -1,4 +1,4 @@
-# Kubernetes K8S存储之Volume
+# 1. Kubernetes K8S存储之Volume
 
 在容器中的文件在磁盘上是临时存放的，当容器关闭时这些临时文件也会被一并清除。这给容器中运行的特殊应用程序带来一些问题.
 
@@ -12,7 +12,7 @@ Kubernetes Volume卷具有明确的生命周期——与包裹它的 Pod 相同�
 
 使用卷时，Pod 声明中需要提供卷的类型 (.spec.volumes 字段)和卷挂载的位置 (.spec.containers.volumeMounts 字段).
 
-## Volume类型
+## 1.1. Volume类型
 
 目前, Kubernetes支持以下类型的Volume, 详情解释请见[官网: Kubernetes卷说明](https://kubernetes.io/zh/docs/concepts/storage/volumes/)
 
@@ -49,7 +49,7 @@ vsphereVolume
 
 常用的类型主要有: Secret、ConfigMap、emptyDir、hostPath
 
-## emptyDir
+## 1.2. emptyDir
 
 当 Pod 指定到某个节点上时，首先创建的是一个 emptyDir 卷，并且只要 Pod 在该节点上运行，卷就一直存在。就像它的名称表示的那样，卷最初是空的。
 
@@ -59,13 +59,13 @@ vsphereVolume
 
 注意：容器崩溃并不会导致 Pod 被从节点上移除，因此容器崩溃时 emptyDir 卷中的数据是安全的。
 
-### emptyDir用途
+### 1.2.1. emptyDir用途
 
 - 缓存空间，例如基于磁盘的归并排序
 - 为耗时较长的计算任务提供检查点，以便任务能方便地从崩溃前状态恢复执行
 - 在 Web 服务器容器服务数据时，保存内容管理器容器获取的文件
 
-### emptyDir示例
+### 1.2.2. emptyDir示例
 
 ```shell
 [root@k8s-master volume]# mkdir emptydir;cd emptydir
@@ -139,7 +139,7 @@ Events:
 
 创建了`myapp-pod`和`busybox-pod`两个容器
 
-### emptyDir验证
+### 1.2.3. emptyDir验证
 
 ```shell
 # 进入myapp-pod容器
@@ -164,17 +164,17 @@ busybox-pod
 
 由上可见，一个Pod中多个容器可共享同一个emptyDir卷
 
-## hostPath
+## 1.3. hostPath
 
 hostPath 卷能将主机node节点文件系统上的文件或目录挂载到你的 Pod 中。 虽然这不是大多数 Pod 需要的，但是它为一些应用程序提供了强大的逃生舱。
 
-### hostPath用途
+### 1.3.1. hostPath用途
 
 - 运行一个需要访问 Docker 引擎内部机制的容器；请使用 hostPath 挂载 /var/lib/docker 路径
 - 在容器中运行 cAdvisor 时，以 hostPath 方式挂载 /sys
 - 允许 Pod 指定给定的 hostPath 在运行 Pod 之前是否应该存在，是否应该创建以及应该以什么方式存在
 
-### 支持类型
+### 1.3.2. 支持类型
 
 除了必需的 path 属性之外，用户可以选择性地为 hostPath 卷指定 type。支持的 type 值如下：
 
@@ -189,7 +189,7 @@ hostPath 卷能将主机node节点文件系统上的文件或目录挂载到你�
 | CharDevice        | 在给定路径上必须存在的字符设备                                                                                                                                   |
 | BlockDevice       | 在给定路径上必须存在的块设备                                                                                                                                     |
 
-### 注意事项
+### 1.3.3. 注意事项
 
 当使用这种类型的卷时要小心，因为：
 
@@ -197,7 +197,7 @@ hostPath 卷能将主机node节点文件系统上的文件或目录挂载到你�
 - 当 Kubernetes 按照计划添加资源感知的调度时，这类调度机制将无法考虑由 hostPath 卷使用的资源
 - 基础主机上创建的文件或目录只能由 root 用户写入。需要在 特权容器 中以 root 身份运行进程，或者修改主机上的文件权限以便容器能够写入 hostPath 卷
 
-### hostPath示例
+### 1.3.4. hostPath示例
 
 ```shell
 [root@k8s-master hostpath]# cat pod_hostpath.yaml 
@@ -307,9 +307,9 @@ Events:
 # pod被调度到了k8s-node1上
 ```
 
-### 验证hostPath
+### 1.3.5. 验证hostPath
 
-#### 宿主机中操作
+#### 1.3.5.1. 宿主机中操作
 
 pod被调度到了k8s-node1上, 切换到k8s-node1
 
@@ -338,7 +338,7 @@ file
 Tue Dec 15 02:33:17 EST 2020
 ```
 
-#### 容器内操作
+#### 1.3.5.2. 容器内操作
 
 切换到k8s-master
 

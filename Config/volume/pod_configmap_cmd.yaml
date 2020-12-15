@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-configmap-cmd
+spec:
+  containers:
+  - name: myapp
+    image: registry.cn-beijing.aliyuncs.com/google_registry/myapp:v1
+    command: ["/bin/sh", "-c", "echo \"===$(SPECAIL_HOW_KEY)===$(SPECAIL_TPYE_KEY)===\""]
+    env:
+    - name: SPECAIL_HOW_KEY
+      valueFrom:
+        configMapKeyRef:
+          name: special-config
+          key: special.how
+    - name: SPECAIL_TPYE_KEY
+      valueFrom:
+        configMapKeyRef:
+          name: special-config
+          key: special.type
+  restartPolicy: Never
