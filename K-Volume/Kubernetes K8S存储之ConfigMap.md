@@ -1,4 +1,4 @@
-# Kubernetes K8S存储之ConfigMap
+# 1. Kubernetes K8S存储之ConfigMap
 
 ConfigMap 是一种 API 对象,用来将非机密性的数据保存到健值对中.使用时可以用作环境变量/命令行参数或者存储卷中的配置文件.提供向容器内注入信息的功能.
 
@@ -6,9 +6,9 @@ ConfigMap 将环境配置信息和容器镜像解耦,便于应用配置的修改
 
 备注: ConfigMap 并不提供保密或者加密功能.如果你想存储的数据是机密的,请使用 Secret;或者使用其他第三方工具来保证数据的私密性.而不是用 ConfigMap.
 
-## ConfigMap创建方式
+## 1.1. ConfigMap创建方式
 
-### 通过目录创建
+### 1.1.1. 通过目录创建
 
 `--from-file`指定目录下所有文件都作为ConfigMap中的键值对来使用, 键为文件名, 值为文件内容
 
@@ -109,7 +109,7 @@ how.nice.to.look=fairlyNice
 Events:  <none>
 ```
 
-## 通过文件创建
+## 1.2. 通过文件创建
 
 `--from-file`指定对应配置文件, 可以多次使用引入不同的配置文件
 
@@ -174,7 +174,7 @@ secret.code.lives=30
 Events:  <none>
 ```
 
-## 通过命令行创建
+## 1.3. 通过命令行创建
 
 `--from-literal`传递配置参数, 可多次使用
 
@@ -203,7 +203,7 @@ Events:  <none>
 
 ```
 
-## 通过YAML文件创建
+## 1.4. 通过YAML文件创建
 
 ```shell
 # 创建文件
@@ -255,11 +255,11 @@ color.bad=yellow
 Events:  <none>
 ```
 
-## Pod中使用ConfigMap
+## 1.5. Pod中使用ConfigMap
 
 在Pod中使用configmap配置信息
 
-### 查看当前的configmap
+### 1.5.1. 查看当前的configmap
 
 ```shell
 [root@k8s-master volume]# kubectl get cm
@@ -270,7 +270,7 @@ game-config-file   1      19m
 special-config     2      9m2s
 ```
 
-### 用configmap来代替环境变量
+### 1.5.2. 用configmap来代替环境变量
 
 ```shell
 # 创建Pod
@@ -331,7 +331,7 @@ MYAPP_SVC_PORT_80_TCP=tcp://10.98.57.156:80
 ...
 ```
 
-## 使用ConfigMap设置命令行参数
+## 1.6. 使用ConfigMap设置命令行参数
 
 ```shell
 # 创建yaml文件
@@ -367,7 +367,7 @@ pod-configmap-cmd   0/1     Completed   0          51s
 ===very===charm===
 ```
 
-## 通过数据卷插件使用ConfigMap
+## 1.7. 通过数据卷插件使用ConfigMap
 
 在数据卷里面使用ConfigMap，最基本的就是将文件填入数据卷，在这个文件中，键就是文件名【第一层级的键】，键值就是文件内容。
 
@@ -440,9 +440,9 @@ color.bad=yellow
 /etc/config # 
 ```
 
-## ConfigMap热更新
+## 1.8. ConfigMap热更新
 
-### 准备工作
+### 1.8.1. 准备工作
 
 ```shell
 # 创建yaml文件,创建ConfigMap和Deploy
@@ -514,7 +514,7 @@ Events:  <none>
 INFO
 ```
 
-### 热更新log_level
+### 1.8.2. 热更新log_level
 
 ```shell
 # 修改log_level=DEBUG
