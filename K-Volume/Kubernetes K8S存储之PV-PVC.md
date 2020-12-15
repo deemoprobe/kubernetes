@@ -1,20 +1,20 @@
-# Kubernetes K8S存储之PV-PVC
+# 1. Kubernetes K8S存储之PV-PVC
 
 为了方便管理存储, PersistentVolume子系统为用户和管理员提供了一个API, 该API从如何使用存储中抽象出如何提供存储的详细信息.为此, 引入了两个新的API资源：PersistentVolume(PV)和PersistentVolumeClaim(PVC)
 
-## PV概述
+## 1.1. PV概述
 
 PersistentVolume (PV)是集群中由管理员提供或使用存储类动态提供的一块存储。它是集群中的资源，就像节点是集群资源一样
 
 PV是与Volumes类似的卷插件，但其生命周期与使用PV的任何单个Pod无关。由此API对象捕获存储的实现细节，不管是NFS、iSCSI还是特定于云提供商的存储系统
 
-## PVC概述
+## 1.2. PVC概述
 
 PersistentVolumeClaim (PVC) 是用户对存储的请求。它类似于Pod；Pods消耗节点资源，而PVC消耗PV资源。Pods可以请求特定级别的资源(CPU和内存)。Claim可以请求特定的存储大小和访问模式(例如，它们可以挂载一次读写或多次只读)
 
 虽然PersistentVolumeClaims (PVC) 允许用户使用抽象的存储资源，但是用户通常需要具有不同属性(比如性能)的PersistentVolumes (PV) 来解决不同的问题。集群管理员需要能够提供各种不同的PersistentVolumes，这些卷在大小和访问模式之外还有很多不同之处，也不向用户公开这些卷是如何实现的细节。对于这些需求，有一个StorageClass资源
 
-## 生命周期
+## 1.3. 生命周期
 
 PV是群集中的资源。PVC是对这些资源的请求，并且还充当对资源的检查。PV和PVC之间的相互作用遵循以下生命周期：
 
@@ -34,7 +34,7 @@ Provisioning ——-> Binding ——–>Using——>Releasing——>Recycling
 
 注：目前只有NFS和HostPath类型卷支持回收策略，AWS EBS,GCE PD,Azure Disk和Cinder支持删除(Delete)策略
 
-## Persistent Volumes类型
+## 1.4. Persistent Volumes类型
 
 PersistentVolume类型作为插件实现。Kubernetes当前支持以下插件：
 
@@ -61,14 +61,14 @@ ScaleIO Volumes
 StorageOS
 ```
 
-### PV卷阶段状态
+### 1.4.1. PV卷阶段状态
 
 - Available – 资源尚未被claim使用
 - Bound – 卷已经被绑定到claim了
 - Released – claim被删除，卷处于释放状态，但未被集群回收。
 - Failed – 卷自动回收失败
 
-### 配置文件模板
+### 1.4.2. 配置文件模板
 
 ```shell
 apiVersion: v1
@@ -102,7 +102,7 @@ spec:
 
 备注：当前，仅NFS和HostPath支持回收。AWS EBS，GCE PD，Azure Disk和Cinder卷支持删除
 
-## PV-PVC示例
+## 1.5. PV-PVC示例
 
 ```shell
 # 创建多个pv，存储大小各不相同，是否可读也不相同
