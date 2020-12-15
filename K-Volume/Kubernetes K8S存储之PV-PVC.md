@@ -236,7 +236,4 @@ pv002   5Gi        RWO            Retain           Available                    
 pv003   20Gi       RWO,RWX        Retain           Available                                           4m52s
 pv004   10Gi       RWO,RWX        Retain           Bound       default/mypvc                           4m52s
 pv005   15Gi       RWO,RWX        Retain           Available                                           4m52s
-
 ```
-
-注意: 当PVC yaml文件中 storageClassName为空(未配置)的时候如果没有指定 DefaultStorageClass ，那么是不会分配 pv给 claim的, 查看PVC也会是失败的状态
