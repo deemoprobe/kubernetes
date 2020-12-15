@@ -1,4 +1,4 @@
-# Kubernetes K8S存储之Secret
+# 1. Kubernetes K8S存储之Secret
 
 Secret解决了密码、token、秘钥等敏感数据的配置问题，而不需要把这些敏感数据暴露到镜像或者Pod Spec中。Secret可以以Volume或者环境变量的方式使用.
 
@@ -12,7 +12,7 @@ Secret类型:
 - Opaque：base64编码格式的Secret，用来存储密码、秘钥等
 - kubernetes.io/dockerconfigjson：用来存储私有docker registry的认证信息
 
-## Service Account
+## 1.1. Service Account
 
 通过kube-proxy查看
 
@@ -28,9 +28,9 @@ lrwxrwxrwx 1 root root 16 Dec 15 01:17 namespace -> ..data/namespace
 lrwxrwxrwx 1 root root 12 Dec 15 01:17 token -> ..data/token
 ```
 
-## Opaque Secret
+## 1.2. Opaque Secret
 
-### 创建secret
+### 1.2.1. 创建secret
 
 手动加密，基于base64加密
 
@@ -107,7 +107,7 @@ metadata:
 type: Opaque
 ```
 
-### 将Secret挂载到Volume中
+### 1.2.2. 将Secret挂载到Volume中
 
 ```shell
 # 创建yaml
@@ -147,7 +147,7 @@ deemoprobe
 
 由上可见，在pod中的secret信息实际已经被解密。
 
-## kubernetes.io/dockerconfigjson
+## 1.3. kubernetes.io/dockerconfigjson
 
 首先需要有一个镜像仓库, 比如Docker Hub或者 Harbor搭建一个镜像仓库
 
