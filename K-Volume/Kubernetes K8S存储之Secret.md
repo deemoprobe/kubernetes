@@ -1,18 +1,18 @@
-# 1. Kubernetes K8S存储之Secret
+# Kubernetes K8S存储之Secret
 
-Secret解决了密码、token、秘钥等敏感数据的配置问题，而不需要把这些敏感数据暴露到镜像或者Pod Spec中。Secret可以以Volume或者环境变量的方式使用.
+Secret解决了密码、token、秘钥等敏感数据的配置问题,而不需要把这些敏感数据暴露到镜像或者Pod Spec中.Secret可以以Volume或者环境变量的方式使用.
 
-用户可以创建 secret，同时系统也创建了一些 secret.
+用户可以创建 secret,同时系统也创建了一些 secret.
 
-要使用 secret，pod 需要引用 secret。Pod 可以用两种方式使用 secret：作为 volume 中的文件被挂载到 pod 中的一个或者多个容器里，或者当 kubelet 为 pod 拉取镜像时使用.
+要使用 secret,pod 需要引用 secret.Pod 可以用两种方式使用 secret: 作为 volume 中的文件被挂载到 pod 中的一个或者多个容器里,或者当 kubelet 为 pod 拉取镜像时使用.
 
 Secret类型:
 
-- Service Account：用来访问Kubernetes API，由Kubernetes自动创建，并且会自动挂载到Pod的 `/run/secrets/kubernetes.io/serviceaccount` 目录中
-- Opaque：base64编码格式的Secret，用来存储密码、秘钥等
-- kubernetes.io/dockerconfigjson：用来存储私有docker registry的认证信息
+- Service Account: 用来访问Kubernetes API,由Kubernetes自动创建,并且会自动挂载到Pod的 `/run/secrets/kubernetes.io/serviceaccount` 目录中
+- Opaque: base64编码格式的Secret,用来存储密码、秘钥等
+- kubernetes.io/dockerconfigjson: 用来存储私有docker registry的认证信息
 
-## 1.1. Service Account
+## 1. Service Account
 
 通过kube-proxy查看
 
@@ -28,11 +28,11 @@ lrwxrwxrwx 1 root root 16 Dec 15 01:17 namespace -> ..data/namespace
 lrwxrwxrwx 1 root root 12 Dec 15 01:17 token -> ..data/token
 ```
 
-## 1.2. Opaque Secret
+## 2. Opaque Secret
 
-### 1.2.1. 创建secret
+### 2.1. 创建secret
 
-手动加密，基于base64加密
+手动加密,基于base64加密
 
 ```shell
 # 加密用户名和密码
@@ -107,7 +107,7 @@ metadata:
 type: Opaque
 ```
 
-### 1.2.2. 将Secret挂载到Volume中
+### 2.2. 将Secret挂载到Volume中
 
 ```shell
 # 创建yaml
@@ -145,9 +145,9 @@ deemoprobe
 / # 
 ```
 
-由上可见，在pod中的secret信息实际已经被解密。
+由上可见,在pod中的secret信息实际已经被解密.
 
-## 1.3. kubernetes.io/dockerconfigjson
+## 3. kubernetes.io/dockerconfigjson
 
 首先需要有一个镜像仓库, 比如Docker Hub或者 Harbor搭建一个镜像仓库
 
