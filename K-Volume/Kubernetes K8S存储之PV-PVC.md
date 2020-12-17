@@ -506,7 +506,7 @@ pv-nfs4   10Gi       RWO            Recycle          Available                  
 pv-nfs5   5Gi        RWX            Recycle          Available                   nfs                     8s    Filesystem
 pv-nfs6   5Gi        RWO            Recycle          Available                   nfs                     8s    Filesystem
 # StatefulSet创建并使用PVC
-# StatefulSet 需要 headless 服务 来负责 Pod 的网络标识，因此需要负责创建此服务
+# StatefulSet 需要 headless 服务 来负责 Pod 的网络标识,因此需要负责创建此服务
 [root@k8s-master pvpvc]# vi sts-pod-pvc.yaml 
 apiVersion: v1
 kind: Service
@@ -531,7 +531,7 @@ spec:
     matchLabels:
       app: nginx
   serviceName: "nginx"
-  replicas: 2
+  replicas: 3
   template:
     metadata:
       labels:
@@ -561,34 +561,36 @@ spec:
 service/nginx created
 statefulset.apps/web created
 [root@k8s-master pvpvc]# kubectl get svc
-NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
-nginx           ClusterIP   None             <none>        80/TCP     8s
-# 等待几分钟不等
+NAME         TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
+nginx        ClusterIP   None          <none>        80/TCP    51s
+# 查看StatefulSet
 [root@k8s-master pvpvc]# kubectl get sts
 NAME   READY   AGE
-web    2/2     25m
+web    3/3     108s
 # 查看pod
 [root@k8s-master pvpvc]# kubectl get pod -o wide
-NAME                            READY   STATUS             RESTARTS   AGE   IP               NODE         NOMINATED NODE   READINESS GATES
-web-0                           1/1     Running            0          26m   172.16.36.124    k8s-node1    <none>           <none>
-web-1                           1/1     Running            0          24m   172.16.36.68     k8s-node1    <none>           <none>
+NAME                      READY   STATUS             RESTARTS   AGE     IP               NODE         NOMINATED NODE   READINESS GATES
+web-0                     1/1     Running            0          2m1s    172.16.36.79     k8s-node1    <none>           <none>
+web-1                     1/1     Running            0          109s    172.16.36.80     k8s-node1    <none>           <none>
+web-2                     1/1     Running            0          100s    172.16.36.76     k8s-node1    <none>           <none>
 # 查看PV和PVC
-# 声明了pv-nfs2, pv-nfs6
-[root@k8s-master pvpvc]# kubectl get pvc -o wide
-NAME        STATUS        VOLUME    CAPACITY   ACCESS MODES   STORAGECLASS   AGE   VOLUMEMODE
-www-web-0   Bound         pv-nfs2   3Gi        RWO            nfs            28m   Filesystem
-www-web-1   Bound         pv-nfs6   5Gi        RWO            nfs            25m   Filesystem
-[root@k8s-master pvpvc]# kubectl get pv -o wide
-NAME      CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM               STORAGECLASS   REASON   AGE   VOLUMEMODE
-pv-nfs1   1Gi        RWO            Recycle          Available                       nfs                     61m   Filesystem
-pv-nfs2   3Gi        RWO            Recycle          Bound       default/www-web-0   nfs                     61m   Filesystem
-pv-nfs3   5Gi        RWO            Recycle          Available                       slow                    61m   Filesystem
-pv-nfs4   10Gi       RWO            Recycle          Available                       nfs                     61m   Filesystem
-pv-nfs5   5Gi        RWX            Recycle          Available                       nfs                     61m   Filesystem
-pv-nfs6   5Gi        RWO            Recycle          Bound       default/www-web-1   nfs                     61m   Filesystem
+# 声明了pv-nfs2, pv-nfs4, pv-nfs6
+[root@k8s-master pvpvc]# kubectl get pv
+NAME      CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM               STORAGECLASS   REASON   AGE
+pv-nfs1   1Gi        RWO            Recycle          Available                       nfs                     17h
+pv-nfs2   3Gi        RWO            Recycle          Bound       default/www-web-0   nfs                     17h
+pv-nfs3   5Gi        RWO            Recycle          Available                       slow                    17h
+pv-nfs4   10Gi       RWO            Recycle          Bound       default/www-web-2   nfs                     17h
+pv-nfs5   5Gi        RWX            Recycle          Available                       nfs                     17h
+pv-nfs6   5Gi        RWO            Recycle          Bound       default/www-web-1   nfs                     17h
+[root@k8s-master pvpvc]# kubectl get pvc
+NAME        STATUS   VOLUME    CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+www-web-0   Bound    pv-nfs2   3Gi        RWO            nfs            2m41s
+www-web-1   Bound    pv-nfs6   5Gi        RWO            nfs            2m29s
+www-web-2   Bound    pv-nfs4   10Gi       RWO            nfs            2m20s
 ```
 
-PVC与PV绑定时会根据storageClassName（存储类名称）和accessModes（访问模式）判断哪些PV符合绑定需求。然后再根据存储量大小判断，首先存PV储量必须大于或等于PVC声明量；其次就是PV存储量越接近PVC声明量，那么优先级就越高（PV量越小优先级越高）。
+PVC与PV绑定时会根据storageClassName（存储类名称）和accessModes（访问模式）判断哪些PV符合绑定需求.然后再根据存储量大小判断,首先存PV储量必须大于或等于PVC声明量；其次就是PV存储量越接近PVC声明量,那么优先级就越高（PV量越小优先级越高）.
 
 #### 验证
 
@@ -598,7 +600,10 @@ PVC与PV绑定时会根据storageClassName（存储类名称）和accessModes（
 [root@docker data]# cd nfs2/
 [root@docker nfs2]# touch index.html
 [root@docker nfs2]# echo "pv-nfs2" >> index.html
-[root@docker nfs2]# cd ../nfs6/
+[root@docker nfs2]# cd ../nfs4/
+[root@docker nfs4]# touch index.html
+[root@docker nfs4]# echo "pv-nfs4" >> index.html
+[root@docker nfs4]# cd ../nfs6/
 [root@docker nfs6]# touch index.html
 [root@docker nfs6]# echo "pv-nfs6" >> index.html
 ```
@@ -607,41 +612,127 @@ curl访问pod
 
 ```shell
 [root@k8s-master pvpvc]# kubectl get pod -o wide
-NAME                            READY   STATUS             RESTARTS   AGE   IP               NODE         NOMINATED NODE   READINESS GATES
-web-0                           1/1     Running            0          35m   172.16.36.124    k8s-node1    <none>           <none>
-web-1                           1/1     Running            0          32m   172.16.36.68     k8s-node1    <none>           <none>
-[root@k8s-master pvpvc]# curl 172.16.36.124 
+NAME                      READY   STATUS             RESTARTS   AGE     IP               NODE         NOMINATED NODE   READINESS GATE
+web-0                     1/1     Running            0          5m9s    172.16.36.79     k8s-node1    <none>           <none>
+web-1                     1/1     Running            0          4m57s   172.16.36.80     k8s-node1    <none>           <none>
+web-2                     1/1     Running            0          4m48s   172.16.36.76     k8s-node1    <none>           <none>
+[root@k8s-master pvpvc]# curl 172.16.36.79
 pv-nfs2
-[root@k8s-master pvpvc]# curl 172.16.36.68
+[root@k8s-master pvpvc]# curl 172.16.36.80
 pv-nfs6
+[root@k8s-master pvpvc]# curl 172.16.36.76
+pv-nfs4
 ```
 
 #### 删除sts并回收PV
 
 ```shell
 # 删除statefulset
-[root@k8s-master pvpvc]# kubectl delete -f sts-pod-pvc.yaml 
+[root@k8s-master pvpvc]# kubectl delete -f sts-pod-pvc.yaml
 service "nginx" deleted
 statefulset.apps "web" deleted
 [root@k8s-master pvpvc]# kubectl get pod -o wide
 No resources found in default namespace.
 
-# 查看PVC和PV，并删除PVC
+# 查看PVC和PV,并删除PVC
 [root@k8s-master pvpvc]# kubectl get pvc -o wide
-NAME        STATUS        VOLUME    CAPACITY   ACCESS MODES   STORAGECLASS   AGE   VOLUMEMODE
-www-web-0   Bound         pv-nfs2   3Gi        RWO            nfs            39m   Filesystem
-www-web-1   Bound         pv-nfs6   5Gi        RWO            nfs            36m   Filesystem
+NAME        STATUS   VOLUME    CAPACITY   ACCESS MODES   STORAGECLASS   AGE     VOLUMEMODE
+www-web-0   Bound    pv-nfs2   3Gi        RWO            nfs            8m23s   Filesystem
+www-web-1   Bound    pv-nfs6   5Gi        RWO            nfs            8m11s   Filesystem
+www-web-2   Bound    pv-nfs4   10Gi       RWO            nfs            8m2s    Filesystem
 [root@k8s-master pvpvc]# kubectl get pv -o wide
 NAME      CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM               STORAGECLASS   REASON   AGE   VOLUMEMODE
-pv-nfs1   1Gi        RWO            Recycle          Available                       nfs                     73m   Filesystem
-pv-nfs2   3Gi        RWO            Recycle          Bound       default/www-web-0   nfs                     73m   Filesystem
-pv-nfs3   5Gi        RWO            Recycle          Available                       slow                    73m   Filesystem
-pv-nfs4   10Gi       RWO            Recycle          Available                       nfs                     73m   Filesystem
-pv-nfs5   5Gi        RWX            Recycle          Available                       nfs                     73m   Filesystem
-pv-nfs6   5Gi        RWO            Recycle          Bound       default/www-web-1   nfs                     73m   Filesystem
-[root@k8s-master pvpvc]# kubectl delete pvc www-web-0 www-web-1
+pv-nfs1   1Gi        RWO            Recycle          Available                       nfs                     17h   Filesystem
+pv-nfs2   3Gi        RWO            Recycle          Bound       default/www-web-0   nfs                     17h   Filesystem
+pv-nfs3   5Gi        RWO            Recycle          Available                       slow                    17h   Filesystem
+pv-nfs4   10Gi       RWO            Recycle          Bound       default/www-web-2   nfs                     17h   Filesystem
+pv-nfs5   5Gi        RWX            Recycle          Available                       nfs                     17h   Filesystem
+pv-nfs6   5Gi        RWO            Recycle          Bound       default/www-web-1   nfs                     17h   Filesystem
+[root@k8s-master pvpvc]# kubectl delete pvc www-web-0 www-web-1 www-web-2
 persistentvolumeclaim "www-web-0" deleted
 persistentvolumeclaim "www-web-1" deleted
-# 回收PV
-
+persistentvolumeclaim "www-web-2" deleted
+# PV声明删除后, 会自动回收PV, 但PV需要检测是否还有其他声明在使用所以不会立即删除PV, 需要等一段时间, 几分钟不等
+[root@k8s-master pvpvc]# kubectl get pv -o wide
+NAME      CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM               STORAGECLASS   REASON   AGE   VOLUMEMODE
+pv-nfs1   1Gi        RWO            Recycle          Available                       nfs                     17h   Filesystem
+pv-nfs2   3Gi        RWO            Recycle          Available                       nfs                     17h   Filesystem
+pv-nfs3   5Gi        RWO            Recycle          Available                       slow                    17h   Filesystem
+pv-nfs4   10Gi       RWO            Recycle          Available                       nfs                     17h   Filesystem
+pv-nfs5   5Gi        RWX            Recycle          Available                       nfs                     17h   Filesystem
+pv-nfs6   5Gi        RWO            Recycle          Released    default/www-web-1   nfs                     17h   Filesystem
+# 等了很长时间, 发现pv-nfs6还没有回收, 可以选择继续等待自动回收或者手动回收
+# 编辑pv-nfs6
+[root@k8s-master pvpvc]# kubectl edit pv pv-nfs6
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+#
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+...
+  # 可以看到该PV处于保护状态
+  finalizers:
+  - kubernetes.io/pv-protection
+  name: pv-nfs6
+  resourceVersion: "464943"
+  selfLink: /api/v1/persistentvolumes/pv-nfs6
+  uid: 1bd446ec-a3ba-4455-9e4d-6c1711c6ed7e
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  ###删除以下7行###
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: www-web-1
+    namespace: default
+    resourceVersion: "463514"
+    uid: 130a922c-d468-4f0a-a701-ca124f0619b3
+  ###删除以上7行###
+  nfs:
+    path: /data/nfs6
+    server: 192.168.43.136
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: nfs
+  volumeMode: Filesystem
+status:
+  phase: Released
+# 清除claimRef配置后, 查看PV, 释放成功
+[root@k8s-master pvpvc]# kubectl get pv -o wide
+NAME      CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE   VOLUMEMODE
+pv-nfs1   1Gi        RWO            Recycle          Available           nfs                     17h   Filesystem
+pv-nfs2   3Gi        RWO            Recycle          Available           nfs                     17h   Filesystem
+pv-nfs3   5Gi        RWO            Recycle          Available           slow                    17h   Filesystem
+pv-nfs4   10Gi       RWO            Recycle          Available           nfs                     17h   Filesystem
+pv-nfs5   5Gi        RWX            Recycle          Available           nfs                     17h   Filesystem
+pv-nfs6   5Gi        RWO            Recycle          Available           nfs                     17h   Filesystem
+# 可以查看一下nfs服务端共享文件也都自动删除了
+[root@docker data]# ll nfs2/
+total 0
+[root@docker data]# ll nfs4/
+total 0
+[root@docker data]# ll nfs6/
+total 0
 ```
+
+#### StatefulSet网络标识与PVC
+
+- 匹配StatefulSet的Pod name(网络标识)的模式为：$(statefulset名称)-$(序号),比如StatefulSet名称为web,副本数为3.则为：web-0、web-1、web-2
+
+- StatefulSet为每个Pod副本创建了一个DNS域名,这个域名的格式为：$(podname).(headless service name),也就意味着服务之间是通过Pod域名来通信而非Pod IP.当Pod所在Node发生故障时,Pod会被漂移到其他Node上,Pod IP会发生改变,但Pod域名不会变化
+
+- StatefulSet使用Headless服务来控制Pod的域名,这个Headless服务域名的为：$(service name).$(namespace).svc.cluster.local,其中 cluster.local 指定的集群的域名
+
+- 根据volumeClaimTemplates,为每个Pod创建一个PVC,PVC的命令规则为：$(volumeClaimTemplates name)-$(pod name),比如volumeClaimTemplates为www,pod name为web-0、web-1、web-2；那么创建出来的PVC为：www-web-0、www-web-1、www-web-2
+
+- 删除Pod不会删除对应的PVC,手动删除PVC将自动释放PV.
+
+#### 问题总结
+
+问题1: 尝试使用`kubectl patch pv pv-nfs6 -p '{"metadata":{"finalizers":null}}'`回收PV失败
+
+原因: 因为`finalizers`

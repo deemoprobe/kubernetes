@@ -93,6 +93,9 @@ kubectl delete pods --all
 
 # 强制删除pod
 kubectl delete pod <name> --grace-period=0 --force -n <namespace>
+
+# 强制删除default这个namespace下的所有pod
+kubectl delete pods --all --grace-period=0 --force
 ```
 
 ## 5. kubectl exec
