@@ -23,11 +23,11 @@ PV是群集中的资源; PVC是对这些资源的请求,并且还充当对资源
 
 ![20201216094226](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201216094226.png)
 
-图1: 静态资源供应模式下, 通过PV和PVC完成绑定, 并供Pod使用的存储管理机制
+静态资源供应模式下, 通过PV和PVC完成绑定, 并供Pod使用的存储管理机制
 
 ![20201216103258](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201216103258.png)
 
-图2: 动态资源供应模式下, 通过StorageClass和PVC完成资源动态绑定(系统自动生成PV), 并供Pod使用的存储管理机制
+动态资源供应模式下, 通过StorageClass和PVC完成资源动态绑定(系统自动生成PV), 并供Pod使用的存储管理机制
 
 ![20201216103404](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201216103404.png)
 
@@ -76,6 +76,8 @@ spec:
 ...
 # 如果是Pod等资源, edit对应资源即可
 [root@k8s-master ~]# kubectl edit po pod_name
+# 或者直接注入空数据, 此处以pod为例
+[root@k8s-master ~]# kubectl patch pod pod_name -p '{"metadata":{"finalizers":null}}'
 ```
 
 ### 3.4. 释放Releasing
