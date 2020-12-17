@@ -1,6 +1,6 @@
-# kubernetes常用命令总结
+# Kubernetes K8S基础之常用命令
 
-## 0. 常用
+## 1. 常用
 
 ```shell
 # 开放端口,将nginx服务的8080端口映射到本地30080端口
@@ -11,7 +11,7 @@ kubectl cp nginx:db2379282hbbdsv:/etc/fstab /tmp
 kubectl get nodes --show-labels
 ```
 
-## 1. kubectl apply
+## 2. kubectl apply
 
 - 以文件或标准输入为准应用或更新资源
 
@@ -26,7 +26,7 @@ kubectl apply -f example-controller.yaml
 kubectl apply -f <directory>
 ```
 
-## 2. kubectl get
+## 3. kubectl get
 
 - 列出一个或多个资源
 
@@ -51,7 +51,7 @@ kubectl get pod myweb-ctzhn -o yaml
 
 ```
 
-## 3. kubectl describe
+## 4. kubectl describe
 
 - 显示一个或多个资源的详细状态，默认情况下包括未初始化的资源
 
@@ -74,7 +74,7 @@ kubectl describe pods --include-uninitialized=false
 
 ```
 
-## 4. kubectl delete
+## 5. kubectl delete
 
 - 从文件、stdin 或指定标签选择器、名称、资源选择器或资源中删除资源
 
@@ -98,7 +98,7 @@ kubectl delete pod <name> --grace-period=0 --force -n <namespace>
 kubectl delete pods --all --grace-period=0 --force
 ```
 
-## 5. kubectl exec
+## 6. kubectl exec
 
 - 对 pod 中的容器执行命令
 
@@ -114,7 +114,7 @@ kubectl exec -ti <pod-name> /bin/bash
 
 ```
 
-## 6. kubectl logs
+## 7. kubectl logs
 
 - 打印 Pod 中容器的日志
 
@@ -126,7 +126,7 @@ kubectl logs <pod-name>
 kubectl logs -f <pod-name>
 ```
 
-## 7. kubectl plugin
+## 8. kubectl plugin
 
 - 插件
 

@@ -1,10 +1,10 @@
-# 1. Kubernetes Pod控制器
+# Kubernetes K8S基础之Pod控制器
 
-## 1.1. 控制器
+## 1. 控制器
 
 Kubernetes 中内建了很多 controller（控制器），用来确保pod资源符合预期的状态，控制 Pod 的状态和行为。
 
-## 1.2. 控制器类型
+## 2. 控制器类型
 
 - ReplicaSet(rs)
 - Deployment(deploy)
@@ -47,13 +47,13 @@ services                          svc                                         tr
 ...
 ```
 
-### 1.2.1. ReplicaSet 和 ReplicationController
+### 2.1. ReplicaSet 和 ReplicationController
 
 ReplicationController(RC)用来确保容器应用的副本数始终保持在用户定义的副本数，即如果有容器异常退出，会自动创建新的 Pod 来替代；而如果异常多出来的容器也会自动回收。
 
 在新版本的 Kubernetes 中建议使用 ReplicaSet 来取代 ReplicationController，ReplicaSet规则跟 ReplicationController 没有本质的不同，只是名字不一样，并且 ReplicaSet 支持集合式的 selector。
 
-#### 1.2.1.1. rc实现pod动态缩放
+#### 2.1.1. rc实现pod动态缩放
 
 - 当前RC和pod情况是
 
@@ -116,7 +116,7 @@ replicationcontroller/mysql   1         1         1       24h
 replicationcontroller/myweb   2         2         2       24h
 ```
 
-### 1.2.2. Deployment
+### 2.2. Deployment
 
 Deployment 是一种更高级别的 API 对象，为 Pods 和 ReplicaSets 提供声明式的更新能力。它以类似于 `kubectl rolling-update` 的方式更新其底层 ReplicaSet 及其 Pod。 如果需要这种滚动更新功能，推荐使用 Deployment。
 
@@ -130,7 +130,7 @@ Deployments 的典型用例：
 - 使用 Deployment 状态 来判定上线过程是否出现停滞。
 - 清理较旧的不再需要的 ReplicaSet。
 
-#### 1.2.2.1. 创建 Deployment
+#### 2.2.1. 创建 Deployment
 
 下面是 Deployment 示例。其中创建了一个 ReplicaSet，负责启动三个 nginx Pods：
 
@@ -202,7 +202,7 @@ nginx-deploy-559d658b74-hzdr2   1/1     Running   0          11m   172.16.36.106
 ...
 ```
 
-#### 1.2.2.2. 升级更新 Deployment
+#### 2.2.2. 升级更新 Deployment
 
 ```shell
 [root@k8s-master manifests]# kubectl set image deployment/nginx-deploy nginx=nginx:1.18.0 --record
@@ -224,7 +224,7 @@ nginx-deploy-67dfd6c8f9-gxj29   1/1     Running   0          3m35s   172.16.36.1
 nginx-deploy-67dfd6c8f9-xm68b   1/1     Running   0          3m37s   172.16.36.108   k8s-node1   <none>           <none>
 ```
 
-#### 1.2.2.3. 回滚 Deployment
+#### 2.2.3. 回滚 Deployment
 
 ```shell
 [root@k8s-master manifests]# kubectl rollout undo deployment/nginx-deploy
@@ -345,7 +345,7 @@ kubectl rollout pause deployment/nginx-deploy
 
 ```
 
-### 1.2.3. DaemonSet
+### 2.3. DaemonSet
 
 DaemonSet 确保全部（或者一些）Node上运行一个 Pod 的副本。当有 Node 加入集群时，也会为它们新增一个 Pod，当有 Node 从集群移除时，这些 Pod 也会被回收。删除 DaemonSet 将会删除它创建的所有 Pod。
 使用 DaemonSet 的一些典型用法：
@@ -454,7 +454,7 @@ Events:
   Normal  Started    2m24s  kubelet            Started container daemonset-example
 ```
 
-### 1.2.4. Job
+### 2.4. Job
 
 Job 负责批处理任务，即仅执行一次的任务，它保证批处理任务的一个或多个 Pod 成功结束。
 
@@ -500,7 +500,7 @@ pi-2nlj5   0/1     Completed   0          4m54s   172.16.36.119   k8s-node1   <n
 
 ![20201123180138](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201123180138.png)
 
-### 1.2.5. CronJob
+### 2.5. CronJob
 
 Cron Job 管理基于时间的 Job，即：
 
@@ -570,7 +570,7 @@ cronjob.batch "hello" deleted
 No resources found in default namespace.
 ```
 
-### 1.2.6. StatefulSet
+### 2.6. StatefulSet
 
 StatefulSet 作为 Controller 为 Pod 提供唯一的标识，它可以保证部署和 scale 的顺序。
 StatefulSet 是为了解决有状态服务的问题（对应 Deployment 和 ReplicaSet 是为无状态服务而设计），其应用场景包括：
@@ -580,14 +580,14 @@ StatefulSet 是为了解决有状态服务的问题（对应 Deployment 和 Repl
 有序部署、有序扩展，即 Pod 是有顺序的，在部署或者扩展的时候要住所定义的顺序依次进行（即从 0 到 N-1，在下一个 Pod 运行之前所有之前的 Pod 必须都是 Running 和 Ready 状态），基于 init containers 来实现
 有序收缩，有序删除（即从 N-1 到 0 ）
 
-### 1.2.7. Horizontal Pod Autoscaling(HPA)
+### 2.7. Horizontal Pod Autoscaling(HPA)
 
 顾名思义，使 Pod 水平自动缩放，提高集群的整体资源利用率。
 Horizontal Pod Autoscaling 仅适用于 Deployment 和 ReplicaSet。在 v1 版本中仅支持根据 Pod 的 CPU 利用率扩缩容，在 v1alpha 版本中，支持根据内存和用户自定义的 metric 扩缩容。
 
-### 1.2.8. pod的调度
+### 2.8. pod的调度
 
-#### 1.2.8.1. 定向调度(nodeSelector)
+#### 2.8.1. 定向调度(nodeSelector)
 
 Kubernetes上kube-scheduler负责pod调度，通过内置算法实现最佳节点的调度，当然也可以指定调度的节点
 
@@ -647,7 +647,7 @@ nginx-deploy-79bf6fcf-thbpt   1/1     Running   0          11s   172.16.36.127  
 
 当然也可以通过`kubectl get nodes k8s-node1 --show-labels`查到的系统标签进行定向调度
 
-#### 1.2.8.2. 亲和与反亲和调度
+#### 2.8.2. 亲和与反亲和调度
 
 定向调度比较是一种强制分配的方式进行pod调度，推荐使用亲和性调度代替定向调度，亲和性调度有下面两种表达：
 
@@ -663,7 +663,7 @@ OPerator参数：
 - Exists：某个label存在
 - DoesNotExist：某个label不存在
 
-#### 1.2.8.3. node亲和调度(nodeAffinity)
+#### 2.8.3. node亲和调度(nodeAffinity)
 
 Note: 支持的operator操作： In, NotIn, Exists, DoesNotExist, Gt, Lt. 其中，NotIn and DoesNotExist用于实现反亲和性。
 
@@ -698,7 +698,7 @@ spec:
     image: k8s.gcr.io/pause:2.0
 ```
 
-#### 1.2.8.4. pod亲和和反亲和调度
+#### 2.8.4. pod亲和和反亲和调度
 
 Pod的亲和性与反亲和性是基于Node节点上已经运行pod的标签(而不是节点上的标签)决定的，从而约束哪些节点适合调度pod。
 
@@ -765,7 +765,7 @@ spec:
 - 与security=s1的pod为同一种disk-type(同一种磁盘的拓扑域)
 - 不与app=nginx的pod调度在同一node节点上
 
-#### 1.2.8.5. 污点和容忍(Taints和Tolerations)
+#### 2.8.5. 污点和容忍(Taints和Tolerations)
 
 Taint需要和Toleration配合使用，让pod避开某些节点，除非pod创建时声明容忍策略，否则不会在有污点的节点上运行。
 

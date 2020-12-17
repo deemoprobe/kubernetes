@@ -1,11 +1,11 @@
-# kubernetes web 实例
+# Kubernetes K8S基础之Web实例
 
-## 实例说明
+## 1. 实例说明
 
 创建运行在Tomcat里面的Web APP, 实现JSP页面通过jdbc直接访问MySQL数据库在页面上展示数据.  
 需要两个容器: Web APP 和 MySQL
 
-## 创建MySQL
+## 2. 创建MySQL
 
 ```shell
 cd /etc/kubernetes/manifests
@@ -76,7 +76,7 @@ service/mysql        ClusterIP   192.168.68.128   <none>        3306/TCP       1
 kubectl describe po mysql
 ```
 
-## 创建 MyWeb APP
+## 3. 创建 MyWeb APP
 
 ```shell
 # 创建RC
@@ -128,13 +128,13 @@ spec:
 kubectl create -f myweb_svc.yaml
 ```
 
-## 访问结果
+## 4. 访问结果
 
 访问地址：IP:30001/demo/
 
 ![20201026143020](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201026143020.png)
 
-## 问题总结
+## 5. 问题总结
 
 1. MySQL版本需要选择5.6
 2. 端口访问不通
