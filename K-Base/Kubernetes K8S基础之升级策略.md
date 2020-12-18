@@ -1,14 +1,14 @@
-# 手动升级kubernetes集群
+# Kubernetes K8S基础之升级策略
 
 手动升级的还没有详细的方案，大多是基于管理工具部署和升级，比如juju、kubeadm、kops、kubespray等。
 
-## 升级步骤
+## 1. 升级步骤
 
 > **注意：**该升级步骤是实验性的，建议在测试集群上使用，无法保证线上服务不中断，实际升级完成后无需对线上服务做任何操作。
 
 大体上的升级步骤是，先升级master节点，然后再一次升级每台node节点。
 
-## 升级建议
+## 2. 升级建议
 
 主要包括以下建议：
 
@@ -17,12 +17,12 @@
 - 使用pod的preStop hook，加强pod的生命周期管理
 - 使用就绪和健康检查探针来确保应用存活和及时阻拦应用流量的分发
 
-### 准备
+### 2.1. 准备
 
 1. 备份kubernetes原先的二进制文件和配置文件。
 2. 下载最新版本的kubernetes二进制包，如1.8.5版本，下载二进制包，我们使用的是[kubernetes-server-linux-amd64.tar.gz](https://dl.k8s.io/v1.8.5/kubernetes-server-linux-amd64.tar.gz)，分发到集群的每个节点上。
 
-### 升级master节点
+### 2.2. 升级master节点
 
 停止master节点的进程
 
@@ -44,7 +44,7 @@ systemctl start kube-controller-manager
 
 因为我们的master节点同时也作为node节点，所有还要执行下面的”升级node节点“中的步骤。
 
-### 升级node节点
+### 2.3. 升级node节点
 
 关闭swap
 
@@ -79,7 +79,7 @@ systemctl start kube-proxy
 
 启动新版本的kube-proxy报错找不到`conntrack`命令，使用`yum install -y conntrack-tools`命令安装后重启kube-proxy即可。
 
-## 检查
+## 3. 检查
 
 到此升级完成，在master节点上检查节点状态：
 

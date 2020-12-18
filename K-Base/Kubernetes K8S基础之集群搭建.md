@@ -1,18 +1,18 @@
-# Kubernetes 集群部署流程
+# Kubernetes K8S基础之集群搭建
 
-- `kubeadm`部署集群  
-- `kubectl`命令行工具进行管理  
+- `kubeadm`部署集群
+- `kubectl`命令行工具进行管理
 - `kubelet`作为后台进程存在
 
-## 环境说明
+## 1. 环境说明
 
 - 虚拟机： VMware® Workstation Pro 16  
 - 操作系统：CentOS Linux release 8.2.2004  
 - 操作用户：root用户
 
-## 资源分配
+## 2. 资源分配
 
-### 节点准备
+### 2.1. 节点准备
 
 | 主机节点名称 |      IP      | CPU核心数 | 内存大小 | 磁盘大小 |
 | :----------: | :----------: | :-------: | :------: | :------: |
@@ -20,12 +20,12 @@
 |  k8s-node1   | 192.168.3.14 |     2     |    8G    |   150G   |
 |  k8s-node2   | 192.168.3.15 |     2     |    8G    |   150G   |
 
-## 操作步骤
+## 3. 操作步骤
 
 下面**1-8**步骤所有节点都要执行,**9-10**在master节点执行,**11**在node节点执行  
 如果**9-11**有报错, 先根据报错信息尝试解决, 无法解决时, 可以`kubeadm reset --force`重置集群重新配置
 
-### 1.关闭swap
+### 3.1. 1.关闭swap
 
 ```shell
 # 临时关闭
@@ -36,7 +36,7 @@ vim /etc/fstab
 #UUID=65c9f92d-4828-4d46-bf19-fb78a38d2fd1 swap                    swap    defaults        0 0
 ```
 
-### 2.关闭SELinux
+### 3.2. 2.关闭SELinux
 
 ```shell
 # 永久生效,重启后生效
@@ -46,7 +46,7 @@ selinux=disable
 setenforce 0
 ```
 
-### 3. 关闭防火墙
+### 3.3. 关闭防火墙
 
 ```shell
 systemctl stop firewalld
@@ -54,7 +54,7 @@ systemctl disable firewalld
 systemctl status firewalld
 ```
 
-### 4. 添加主机信息
+### 3.4. 添加主机信息
 
 ```shell
 vi /etc/hosts
@@ -63,7 +63,7 @@ vi /etc/hosts
 192.168.3.15  k8s-node2
 ```
 
-### 5. 配置流量
+### 3.5. 配置流量
 
 将流量传递到iptables链
 
@@ -75,7 +75,7 @@ EOF
 sysctl --system
 ```
 
-### 6. 部署Docker
+### 3.6. 部署Docker
 
 ```shell
 # 卸载已存在docker
@@ -130,7 +130,7 @@ docker info
 docker info | grep Driver
 ```
 
-### 7. 配置kubernetes镜像源
+### 3.7. 配置kubernetes镜像源
 
 ```shell
 # 此处选择的是阿里云镜像源
@@ -145,7 +145,7 @@ gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors
 EOF
 ```
 
-### 8. 安装kubernetes
+### 3.8. 安装kubernetes
 
 ```shell
 yum install -y kubelet kubeadm kubectl
@@ -156,7 +156,7 @@ systemctl enable kubelet
 # 先不启动kubelet,因为会启动失败,提示初始化文件不存在,需要先执行kubeadm init完成初始化
 ```
 
-### 9. 部署k8s-master
+### 3.9. 部署k8s-master
 
 在master节点上执行
 
@@ -190,7 +190,7 @@ NAME         STATUS     ROLES    AGE   VERSION
 k8s-master   NotReady   master   28m   v1.19.3
 ```
 
-### 10. 配置calico网络
+### 3.10. 配置calico网络
 
 在master节点上执行
 
@@ -215,7 +215,7 @@ kubeadm-config                       2      29m
 kubelet-config-1.19                  1      29m
 ```
 
-### 11. node节点加入集群
+### 3.11. node节点加入集群
 
 在node节点上执行
 
@@ -225,7 +225,7 @@ kubeadm join 192.168.3.13:6443 --token vmbhd0.e4cszyn6ozqv9tet \
   --discovery-token-ca-cert-hash sha256:c8fd072fd90c9ddbae3b3945ba0120abf5ed6777de3354a6eb4814a93ed1b844
 ```
 
-## 测试集群
+## 4. 测试集群
 
 master节点执行
 

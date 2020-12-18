@@ -1,4 +1,4 @@
-# Kubernetes pod健康检查
+# Kubernetes K8S进阶之健康检查
 
 HTTP, socket, 命令三种方式实现健康检查
 
