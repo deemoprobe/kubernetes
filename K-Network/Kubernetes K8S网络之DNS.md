@@ -1,4 +1,4 @@
-# Kubernetes DNS
+# Kubernetes K8S网络之DNS
 
 在Kubernetes中, DNS服务是非必须的, 所以无论是Kube-dns还是CoreDNS通常是以插件的形式安装, 但涉及到域名访问和服务发现时, DNS服务又是必须的. 用以解析Kubernetes集群内的pod和Service域名.
 
@@ -7,7 +7,7 @@ Service服务发现的两种方式:
 - 环境变量: Pod创建的时候，服务的ip和port会以环境变量的形式注入到pod里
 - DNS: Service创建成功后，会在dns服务器里导入一些记录，想要访问某个服务，通过dns服务器解析出对应的ip和port，从而实现服务访问
 
-## 环境变量
+## 1. 环境变量
 
 ```shell
 # 创建nginx deploy
@@ -103,7 +103,7 @@ PWD=/
 
 可以看到之前创建的nginx service已经写到了环境变量里, 从这里的 **NGINX_SERVICE_SERVICE_HOST=192.168.33.47**和**NGINX_SERVICE_SERVICE_PORT=8180**两个环境变量就能发现nginx服务, 但这里有个问题, 获取环境变量前提必须是先有对应的Service创建成功并写入环境变量, 如果Servcie没有启动, 这些环境变量便无法获取, 稳定性无法保证.
 
-## DNS
+## 2. DNS
 
 Kubernetes 从 v1.11 开始可以使用 CoreDNS 来提供命名服务，并从 v1.13 开始成为默认 DNS 服务。CoreDNS 的特点是效率更高，资源占用率更小，推荐使用 CoreDNS 替代 kube-dns 为集群提供 DNS 服务。CoreDNS基本架构如下:
 
@@ -161,7 +161,7 @@ Name:      kubernetes.default
 Address 1: 192.168.0.1 kubernetes.default.svc.cluster.local
 ```
 
-## Pod 的 DNS 配置
+## 3. Pod 的 DNS 配置
 
 Pod 的 DNS 策略
 
@@ -218,7 +218,7 @@ search default.svc.cluster-domain.example cluster-domain.example
 options pod_num:1
 ```
 
-## 验证DNS配置
+## 4. 验证DNS配置
 
 ```shell
 # 查看之前讲解环境变量时创建的Service
