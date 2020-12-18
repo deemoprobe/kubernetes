@@ -1,4 +1,4 @@
-# Kubernetes K8S基础之升级策略
+# Kubernetes基础之升级策略
 
 手动升级的还没有详细的方案，大多是基于管理工具部署和升级，比如juju、kubeadm、kops、kubespray等。
 

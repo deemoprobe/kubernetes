@@ -1,4 +1,4 @@
-# Kubernetes K8S基础之学习规划
+# Kubernetes基础之学习规划
 
 ## 1.容器及编排 （Containers & Orchestration）
 

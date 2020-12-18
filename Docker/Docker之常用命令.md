@@ -1,6 +1,6 @@
-# 1. docker常用命令
+# Docker之常用命令
 
-## 1.1. 基础
+## 1. 基础
 
 ```shell
 # 查看docker版本
@@ -29,7 +29,7 @@ docker exec -it ID bash
 
 ```
 
-## 1.2. 镜像命令
+## 2. 镜像命令
 
 - REPOSITORY: 镜像的仓库源
 - TAG: 镜像标签
@@ -37,7 +37,7 @@ docker exec -it ID bash
 - CREATED: 镜像已创建时间
 - SIZE: 镜像大小
 
-### 1.2.1. docker image
+### 2.1. docker image
 
 ```shell
 # 查看镜像
@@ -50,7 +50,7 @@ docker images -q
 docker images -qa
 ```
 
-### 1.2.2. docker search
+### 2.2. docker search
 
 ```shell
 # 从Docker Hub上查询已存在镜像
@@ -62,7 +62,7 @@ docker search -s 10 IMAGE
 docker search --filter=stars=15 IMAGE
 ```
 
-### 1.2.3. docker pull
+### 2.3. docker pull
 
 ```shell
 # 从配置好的仓库拉取镜像, 未配置的话默认从Docker Hub上获取
@@ -71,7 +71,7 @@ docker pull IMAGE  <==>  docker pull IMAGE:latest
 docker pull IMAGE:TAG
 ```
 
-### 1.2.4. docker rmi
+### 2.4. docker rmi
 
 ```shell
 # 删除最新版本镜像
@@ -97,9 +97,9 @@ Untagged: hello-world@sha256:8c5aeeb6a5f3ba4883347d3747a7249f491766ca1caa47e5da5
 Deleted: sha256:bf756fb1ae65adf866bd8c456593cd24beb6a0a061dedf42b26a993176745f6b
 ```
 
-## 1.3. 容器命令
+## 3. 容器命令
 
-### 1.3.1. docker run
+### 3.1. docker run
 
 docker run [OPTIONS] IMAGE_ID [COMAND] [ARG...]
 
@@ -165,7 +165,7 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 
 ![20201125144623](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201125144623.png)
 
-### 1.3.2. docker ps
+### 3.2. docker ps
 
 docker ps [OPTIONS]
 
@@ -176,12 +176,12 @@ OPTIONS字段说明:
 - -n [num] 显示最近创建的num个容器
 - -q 显示正在运行容器的ID
 
-### 1.3.3. 退出容器
+### 3.3. 退出容器
 
 - exit 退出并关闭容器(适用于docker run命令启动的容器, docker exec 进入容器exit退出后不影响容器状态)
 - Ctrl+P+Q 退出但不关闭容器(适用于docker run命令启动的容器)
 
-### 1.3.4. 容器启停
+### 3.4. 容器启停
 
 ```shell
 # 启动已停止的容器
@@ -194,7 +194,7 @@ docker stop 容器名或ID
 docker kill 容器名或ID
 ```
 
-### 1.3.5. 删除容器
+### 3.5. 删除容器
 
 ```shell
 # 删除已停止容器
@@ -207,7 +207,7 @@ or
 docker ps -a -q | xargs docker rm
 ```
 
-### 1.3.6. 进入正在运行的容器
+### 3.6. 进入正在运行的容器
 
 ```shell
 # 进入正在运行的容器并交互
@@ -217,7 +217,7 @@ docker exec -it 容器ID ls -al /
 exit # 退出
 ```
 
-### 1.3.7. 容器命令高级操作
+### 3.7. 容器命令高级操作
 
 docker单独启动容器作为守护进程(后台运行), 启动后`docker ps -a`会发现已经退出了  
 原因是：docker容器运行机制决定,docker容器后台运行就必须要有一个前台进程,否则会自动退出  
@@ -251,7 +251,7 @@ docker top 容器ID
 docker cp 容器ID:/path /宿主机path
 ```
 
-### 1.3.8. 镜像的定制
+### 3.8. 镜像的定制
 
 ```shell
 # 如果该容器内部做了更改，提交打包后更改也包含进去，以此完成镜像的定制
@@ -268,7 +268,7 @@ test/nginx          v1                  a804b4414ede        6 seconds ago       
 nginx               1.18.0              2562b6bef976        6 hours ago         133MB
 ```
 
-### 1.3.9. 高级命令
+### 3.9. 高级命令
 
 - 查看docker配置信息
 

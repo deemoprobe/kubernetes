@@ -1,4 +1,4 @@
-# Kubernetes K8S进阶之故障排查
+# Kubernetes进阶之故障排查
 
 - 查看某个资源的定义和用法
 

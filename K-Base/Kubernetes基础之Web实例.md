@@ -1,4 +1,4 @@
-# Kubernetes K8S基础之Web实例
+# Kubernetes基础之Web实例
 
 ## 1. 实例说明
 

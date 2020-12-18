@@ -1,4 +1,4 @@
-# Kubernetes K8S基础之集群搭建
+# Kubernetes基础之集群搭建
 
 - `kubeadm`部署集群
 - `kubectl`命令行工具进行管理

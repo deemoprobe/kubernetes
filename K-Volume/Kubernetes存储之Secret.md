@@ -1,4 +1,4 @@
-# Kubernetes K8S存储之Secret
+# Kubernetes存储之Secret
 
 Secret解决了密码、token、秘钥等敏感数据的配置问题,而不需要把这些敏感数据暴露到镜像或者Pod Spec中.Secret可以以Volume或者环境变量的方式使用.
 

@@ -1,4 +1,4 @@
-# Kubernetes K8S基础之概念总结
+# Kubernetes基础之相关概念
 
 ## 1. Kubernetes是什么
 

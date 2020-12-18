@@ -1,4 +1,4 @@
-# Kubernetes K8S基础之Pod控制器
+# Kubernetes基础之Pod控制器
 
 ## 1. 控制器
 

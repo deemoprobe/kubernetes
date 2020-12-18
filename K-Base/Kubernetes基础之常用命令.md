@@ -1,4 +1,4 @@
-# Kubernetes K8S基础之常用命令
+# Kubernetes基础之常用命令
 
 ## 1. 常用
 

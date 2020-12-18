@@ -1,4 +1,4 @@
-# Kubernetes K8S存储之Download API
+# Kubernetes存储之Download API
 
 引用Downward API元数据信息的常用方式之一是使用容器的环境变量、它通过在valueFrom字段中嵌套fieldRef或resourceFieldRef字段来引用相应的数据源, 也可以为存储卷注入元数据
 

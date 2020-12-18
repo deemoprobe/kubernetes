@@ -1,4 +1,4 @@
-# Kubernetes K8S网络之DNS
+# Kubernetes网络之DNS
 
 在Kubernetes中, DNS服务是非必须的, 所以无论是Kube-dns还是CoreDNS通常是以插件的形式安装, 但涉及到域名访问和服务发现时, DNS服务又是必须的. 用以解析Kubernetes集群内的pod和Service域名.
 

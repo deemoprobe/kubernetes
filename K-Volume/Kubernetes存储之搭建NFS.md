@@ -1,4 +1,4 @@
-# Kubernetes K8S存储之搭建NFS
+# Kubernetes存储之搭建NFS
 
 ## NFS工作原理简介
 

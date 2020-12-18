@@ -1,4 +1,4 @@
-# Kubernetes K8S网络之概念
+# Kubernetes网络之概念
 
 Kubernetes网路包括网络模型、CNI、Service、Ingress、DNS等。
 
