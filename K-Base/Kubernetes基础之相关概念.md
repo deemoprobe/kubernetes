@@ -21,9 +21,6 @@ Kubernetes 是谷歌开源的容器集群管理系统，是 Google 多年大规�
 
 Kubernetes重要由以下几个核心组件组成:
 
-控制端组件: apiserver/etcd/scheduler/controller-manager/cloud-controller-manager  
-节点组件: kubelet/kube-proxy/
-
 - apiserver 提供了资源操作的唯一入口，并提供认证、授权、访问控制、API 注册和发现等机制
 - etcd 保存整个集群的状态，是集群数据的后台存储区
 - scheduler 负责资源的调度，按照预定的调度策略将 Pod 调度到相应的机器上
@@ -40,15 +37,3 @@ API server是Kubernetes控制端的核心组件, API server开放一个HTTP API,
 多数操作可以通过kubectl和kubeadm命令来完成
 
 ## 3. Kuberbetes对象
-
-## 4. 3种IP
-
-- Node IP：Node的IP地址
-- Pod IP：Pod的IP地址
-- Cluster IP：Service的IP地址
-
-Node的IP地址是集群中每个节点的物理网卡IP地址,是一个真实的物理网络,外部访问的入口IP  
-Pod IP是Docker Engine根据docker0网桥的IP地址段进行分配的,是虚拟的二层网络,维持集群内部pod之间的通信  
-Cluster IP也是一种虚拟网络,为k8s特殊的路由规则提供节点内访问的虚拟IP
-
-为了解决Service和外部通信的问题,在配置服务时可以设定`nodePort`来映射Node节点的端口,最后通过Node节点IP为外部提供访问入口
