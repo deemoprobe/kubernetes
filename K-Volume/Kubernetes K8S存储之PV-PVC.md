@@ -732,9 +732,3 @@ total 0
 - 根据volumeClaimTemplates,为每个Pod创建一个PVC,PVC的命令规则为：$(volumeClaimTemplates name)-$(pod name),比如volumeClaimTemplates为www,pod name为web-0、web-1、web-2；那么创建出来的PVC为：www-web-0、www-web-1、www-web-2
 
 - 删除Pod不会删除对应的PVC,手动删除PVC将自动释放PV.
-
-#### 问题总结
-
-问题1: 尝试使用`kubectl patch pv pv-nfs6 -p '{"metadata":{"finalizers":null}}'`回收PV失败
-
-原因: 因为`finalizers`
