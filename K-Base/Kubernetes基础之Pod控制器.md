@@ -225,13 +225,13 @@ replicaset.apps/nginx-deploy-67dfd6c8f9   3         3         3       16m   ngin
 
 #### 2.2.2. 更新 Deployment
 
-Deployment 可确保在更新时仅关闭一定数量的 Pods.默认情况下,它确保至少 75% 所需 Pods 在运行(25%为容忍的最大不可用量).更新时不会先删除旧的pod，而是先新建一个pod。新pod运行时，才会删除对应老的pod。一切的前提都是为了满足上述的条件。
+Deployment 可确保在更新时仅关闭一定数量的 Pods.默认情况下,它确保至少 75% 所需 Pods 在运行(25%为容忍的最大不可用量).更新时不会先删除旧的pod,而是先新建一个pod.新pod运行时,才会删除对应老的pod.一切的前提都是为了满足上述的条件.
 
 备注: 如果需要更新Deployment,最好通过yaml文件更新,这样回滚到任何版本都非常便捷,而且更容易追述.
 
 ```shell
 # 方式一: 直接修改镜像[不推荐]
-# 执行下面命令后修改对于镜像版本即可, 该方法不会记录命令，通过kubectl rollout history deployment/nginx-deployment 无法查询
+# 执行下面命令后修改对于镜像版本即可, 该方法不会记录命令,通过kubectl rollout history deployment/nginx-deployment 无法查询
 [root@k8s-master k_base]# kubectl edit deploy/nginx-deploy
 
 # 方式二: 命令行更新image[可使用]
@@ -261,8 +261,53 @@ nginx-deploy   3/3     3            3           63m   nginx        nginx:1.16.1 
 total 8
 -rw-r--r-- 1 root root 337 Dec 21 09:59 nginx-deploy-1161.yaml
 -rw-r--r-- 1 root root 337 Dec 21 11:01 nginx-deploy-1180.yaml
+[root@k8s-master k_base]# cat nginx-deploy-1161.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.16.1
+        ports:
+        - containerPort: 80
+[root@k8s-master k_base]# cat nginx-deploy-1180.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.18.0
+        ports:
+        - containerPort: 80
 # 应用镜像为1180的同样的配置文件
-[root@k8s-master k_base]# kubectl apply -f nginx-deploy-1180.yaml 
+# --record 参数可以记录命令,通过 kubectl rollout history deployment/nginx-deployment 可查询
+[root@k8s-master k_base]# kubectl apply -f nginx-deploy-1180.yaml --record
 deployment.apps/nginx-deploy configured
 # 如果正在更新, 可看到下面日志
 [root@k8s-master k_base]# kubectl rollout status deploy/nginx-deploy
@@ -283,6 +328,7 @@ deployment "nginx-deploy" successfully rolled out
 #### 2.2.3. 回滚 Deployment
 
 ```shell
+# 回滚到上一个版本
 [root@k8s-master k_base]# kubectl rollout undo deployment/nginx-deploy
 deployment.apps/nginx-deploy rolled back
 [root@k8s-master k_base]# kubectl get po,deploy,rs
@@ -302,9 +348,42 @@ replicaset.apps/nginx-deploy-67dfd6c8f9   0         0         0       4m44s
 NAME                            READY   STATUS    RESTARTS   AGE   IP              NODE        NOMINATED NODE   READINESS GATES
 nginx-deploy-559d658b74-9dgg8   1/1     Running   0          59s   172.16.36.111   k8s-node1   <none>           <none>
 nginx-deploy-559d658b74-pgrqv   1/1     Running   0          61s   172.16.36.110   k8s-node1   <none>           <none>
+
+# 直接用Yaml文件回退[更新]为对应镜像, 比如 1180-->1161
+[root@k8s-master k_base]# kubectl apply -f nginx-deploy-1161.yaml --record
 ```
 
-更新过程记录
+#### 2.2.4. 回退到历史版本
+
+```shell
+# 查看历史版本
+[root@k8s-master k_base]# kubectl rollout history deploy/nginx-deploy
+deployment.apps/nginx-deploy 
+REVISION  CHANGE-CAUSE
+5         kubectl set image deploy/nginx-deploy nginx=nginx:1.18.0 --record=true
+6         kubectl apply --filename=nginx-deploy-1180.yaml --record=true
+# 查看历史版本信息
+[root@k8s-master k_base]# kubectl rollout history deploy/nginx-deploy --revision=6
+deployment.apps/nginx-deploy with revision #6
+Pod Template:
+  Labels:       app=nginx
+        pod-template-hash=67dfd6c8f9
+  Annotations:  kubernetes.io/change-cause: kubectl apply --filename=nginx-deploy-1180.yaml --record=true
+  Containers:
+   nginx:
+    Image:      nginx:1.18.0
+    Port:       80/TCP
+    Host Port:  0/TCP
+    Environment:        <none>
+    Mounts:     <none>
+  Volumes:      <none>
+# 可以使用 --revision参数指定回退到某个历史版本
+kubectl rollout undo deployment/nginx-deploy --to-revision=6
+# 暂停 deployment 的更新
+kubectl rollout pause deployment/nginx-deploy
+```
+
+#### 2.2.5. 查看更新详情
 
 ```shell
 [root@k8s-master k_base]# kubectl describe po nginx-deploy-559d658b74-9dgg8
@@ -394,11 +473,17 @@ Events:
   Normal  ScalingReplicaSet  15m (x2 over 23m)  deployment-controller  Scaled up replica set nginx-deploy-67dfd6c8f9 to 2
   Normal  ScalingReplicaSet  15m (x2 over 23m)  deployment-controller  Scaled down replica set nginx-deploy-559d658b74 to 1
   Normal  ScalingReplicaSet  15m (x2 over 23m)  deployment-controller  Scaled down replica set nginx-deploy-559d658b74 to 0
-# 可以使用 --revision参数指定某个历史版本
-kubectl rollout undo deployment/nginx-deploy --to-revision=2
-# 暂停 deployment 的更新
-kubectl rollout pause deployment/nginx-deploy
 
+# 其他操作
+# 1. 查看deploy详情
+[root@k8s-master k_base]# kubectl get deploy nginx-deploy -o wide --show-labels
+# 2. 查看rs详情
+[root@k8s-master k_base]# kubectl get rs -o wide --show-labels
+# 3. 查看po详情
+[root@k8s-master k_base]# kubectl get pod -o wide --show-labels
+# 扩缩容
+[root@k8s-master k_base]# kubectl scale deploy/nginx-deploy --replicas=5
+# 可以在 Deployment 中设置 .spec.revisionHistoryLimit,以指定保留多少该 Deployment 的 ReplicaSets数量
 ```
 
 ### 2.3. DaemonSet
@@ -628,13 +713,161 @@ No resources found in default namespace.
 
 ### 2.6. StatefulSet
 
-StatefulSet 作为 Controller 为 Pod 提供唯一的标识,它可以保证部署和 scale 的顺序.
-StatefulSet 是为了解决有状态服务的问题(对应 Deployment 和 ReplicaSet 是为无状态服务而设计),其应用场景包括：
+StatefulSet 是用来管理有状态应用的工作负载 API 对象.
 
-稳定的持久化存储,即 Pod 重新调度后还是能访问到相同的持久化数据,基于 PVC 来实现
-稳定的网络标识,即 Pod 重新调度后其 Pod Name 和 Host Name 不变,基于 Headless Service (即没有 Cluster IP 的 Service)来实现
-有序部署、有序扩展,即 Pod 是有顺序的,在部署或者扩展的时候要住所定义的顺序依次进行(即从 0 到 N-1,在下一个 Pod 运行之前所有之前的 Pod 必须都是 Running 和 Ready 状态),基于 init containers 来实现
-有序收缩,有序删除(即从 N-1 到 0 )
+StatefulSet 中的 Pod 拥有独一无二的身份标识.这个标识基于 StatefulSet 控制器分配给每个 Pod 的唯一顺序索引.Pod 的名称的形式为`<statefulset name>-<ordinal index>` .例如：web的StatefulSet 拥有两个副本,所以它创建了两个 Pod：web-0和web-1.
+
+和 Deployment 相同的是,StatefulSet 管理了基于相同容器定义的一组 Pod.但和 Deployment 不同的是,StatefulSet 为它们的每个 Pod 维护了一个固定的 ID.这些 Pod 是基于相同的声明来创建的,但是不能相互替换：无论怎么调度,每个 Pod 都有一个永久不变的 ID.
+
+使用场景:
+
+- 稳定的、唯一的网络标识符,即Pod重新调度后其PodName和HostName不变[当然IP是会变的]
+- 稳定的、持久的存储,即Pod重新调度后还是能访问到相同的持久化数据,基于PVC实现
+- 有序的、优雅的部署和缩放
+- 有序的、自动的滚动更新
+
+如上面,稳定意味着 Pod 调度或重调度的整个过程是有持久性的.
+
+如果应用程序不需要任何稳定的标识符或有序的部署、删除或伸缩,则应该使用由一组无状态的副本控制器提供的工作负载来部署应用程序,比如使用 Deployment 或者 ReplicaSet 可能更适用于无状态应用部署需要.
+
+#### 限制
+
+- 给定 Pod 的存储必须由 PersistentVolume(PV) 驱动基于所请求的 storage class 来提供,或者由管理员预先提供.
+- 删除或者收缩 StatefulSet 并不会删除它关联的存储卷.这样做是为了保证数据安全,它通常比自动清除 StatefulSet 所有相关的资源更有价值.
+- StatefulSet 当前需要 headless 服务来负责 Pod 的网络标识.需要先创建此服务.
+- 当删除 StatefulSets 时,StatefulSet 不提供任何终止 Pod 的保证.为了实现 StatefulSet 中的 Pod 可以有序和优雅的终止,可以在删除之前将 StatefulSet 缩放为 0.
+- 在默认 Pod 管理策略(OrderedReady) 时使用滚动更新,可能进入需要人工干预才能修复的损坏状态.
+
+#### 有序索引
+
+对于具有 N 个副本的 StatefulSet,StatefulSet 中的每个 Pod 将被分配一个整数序号,从 0 到 N-1,该序号在 StatefulSet 上是唯一的.
+
+StatefulSet 中的每个 Pod 根据 StatefulSet 中的名称和 Pod 的序号来派生出它的主机名.组合主机名的格式为`<statefulset name>-<ordinal index>`.
+
+#### 部署和扩缩保证
+
+- 对于包含 N 个 副本的 StatefulSet,当部署 Pod 时,它们是依次创建的,顺序为 0~(N-1).
+- 当删除 Pod 时,它们是逆序终止的,顺序为 (N-1)~0.
+- 在将缩放操作应用到 Pod 之前,它前面的所有 Pod 必须是 Running 和 Ready 状态.
+- 在 Pod 终止之前,所有的继任者必须完全关闭.
+
+StatefulSet 不应将 pod.Spec.TerminationGracePeriodSeconds 设置为 0.这种做法是不安全的,要强烈阻止.
+
+#### 部署顺序
+
+在下面的 nginx 示例被创建后,会按照 web-0、web-1、web-2 的顺序部署三个 Pod.在 web-0 进入 Running 和 Ready 状态前不会部署 web-1.在 web-1 进入 Running 和 Ready 状态前不会部署 web-2.
+
+如果 web-1 已经处于 Running 和 Ready 状态,而 web-2 尚未部署,在此期间发生了 web-0 运行失败,那么 web-2 将不会被部署,要等到 web-0 部署完成并进入 Running 和 Ready 状态后,才会部署 web-2.
+
+#### 收缩顺序
+
+如果想将示例中的 StatefulSet 收缩为 replicas=1,首先被终止的是 web-2.在 web-2 没有被完全停止和删除前,web-1 不会被终止.当 web-2 已被终止和删除；但web-1 尚未被终止,如果在此期间发生 web-0 运行失败,那么就不会终止 web-1,必须等到 web-0 进入 Running 和 Ready 状态后才会终止 web-1.
+
+```shell
+# 查看StatefulSet说明
+[root@k8s-master k_base]# kubectl explain sts
+KIND:     StatefulSet
+VERSION:  apps/v1
+
+DESCRIPTION:
+     StatefulSet represents a set of pods with consistent identities. Identities
+     are defined as:
+     - Network: A single stable DNS and hostname.
+     - Storage: As many VolumeClaims as requested. The StatefulSet guarantees
+     that a given network identity will always map to the same storage identity.
+
+FIELDS:
+...
+```
+
+#### StatefulSet实例
+
+```shell
+[root@k8s-master k_base]# pwd
+/app/kubernetes/k_base
+[root@k8s-master k_base]# cat statefulset.yaml 
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: http
+  clusterIP: None
+  selector:
+    app: nginx
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+spec:
+  selector:
+    matchLabels:
+      app: nginx # has to match .spec.template.metadata.labels
+  serviceName: "nginx"
+  replicas: 3 # by default is 1
+  template:
+    metadata:
+      labels:
+        app: nginx # has to match .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10   # 默认30秒
+      containers:
+      - name: nginx
+        image: registry.cn-beijing.aliyuncs.com/google_registry/nginx:1.17
+        ports:
+        - containerPort: 80
+          name: http
+[root@k8s-master k_base]# kubectl apply -f statefulset.yaml 
+service/nginx created
+statefulset.apps/web created
+[root@k8s-master k_base]# kubectl get svc -o wide
+NAME         TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE    SELECTOR
+kubernetes   ClusterIP   192.168.0.1   <none>        443/TCP   4d5h   <none>
+nginx        ClusterIP   None          <none>        80/TCP    19s    app=nginx
+[root@k8s-master k_base]# kubectl get sts -o wide
+NAME   READY   AGE   CONTAINERS   IMAGES
+web    3/3     38s   nginx        registry.cn-beijing.aliyuncs.com/google_registry/nginx:1.17
+[root@k8s-master k_base]# kubectl get po -o wide
+NAME                            READY   STATUS             RESTARTS   AGE     IP               NODE         NOMINATED NODE   READINESS GATES
+web-0                           1/1     Running            0          52s     172.16.36.96     k8s-node1    <none>           <none>
+web-1                           1/1     Running            0          42s     172.16.36.91     k8s-node1    <none>           <none>
+web-2                           1/1     Running            0          39s     172.16.36.101    k8s-node1    <none>           <none>
+# 创建busybox Pod进去查看三个nginx Pod的域名信息
+[root@k8s-master k_base]# vi busybox.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox
+  namespace: default
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.28
+    command:
+      - sleep
+      - "3600"
+    imagePullPolicy: IfNotPresent
+  restartPolicy: Always
+# 可以看到web-0, web-1, web-2的域名信息, 其他域名信息是我其他nginx服务的信息, 忽略即可
+[root@k8s-master k_base]# kubectl exec -it busybox /bin/sh
+/ # nslookup nginx.default.svc.cluster.local
+Server:    192.168.0.10
+Address 1: 192.168.0.10 kube-dns.kube-system.svc.cluster.local
+
+Name:      nginx.default.svc.cluster.local
+Address 1: 172.16.36.91 web-1.nginx.default.svc.cluster.local
+Address 2: 172.16.235.235 172-16-235-235.nginx.default.svc.cluster.local
+Address 3: 172.16.36.98 172-16-36-98.nginx.default.svc.cluster.local
+Address 4: 172.16.36.101 web-2.nginx.default.svc.cluster.local
+Address 5: 172.16.36.94 172-16-36-94.nginx.default.svc.cluster.local
+Address 6: 172.16.36.100 172-16-36-100.nginx.default.svc.cluster.local
+Address 7: 172.16.36.96 web-0.nginx.default.svc.cluster.local
+```
 
 ### 2.7. Horizontal Pod Autoscaling(HPA)
 
