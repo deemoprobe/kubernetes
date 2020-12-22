@@ -124,7 +124,7 @@ replicationcontroller/myweb   2         2         2       24h
 
 Deployment 是一种更高级别的 API 资源对象,为 Pods 和 ReplicaSets 提供声明式的更新能力.它以类似于 `kubectl rolling-update` 的方式更新其底层 ReplicaSet 及其 Pod. 如果需要这种滚动更新功能,推荐使用 Deployment.
 
-Deployments 的典型用例：
+Deployments 的典型用例:
 
 - 创建 Deployment 将 ReplicaSet 上线.ReplicaSet 在后台创建 Pods.检查 ReplicaSet 的上线状态,查看其是否成功.
 - 通过更新 Deployment 的 PodTemplateSpec,声明 Pod 的新状态.新的 ReplicaSet 会被创建,Deployment 将 Pod 从旧 ReplicaSet 迁移到新 ReplicaSet. 每个新的 ReplicaSet 都会更新 Deployment 的修订版本.
@@ -136,7 +136,7 @@ Deployments 的典型用例：
 
 #### 2.2.1. 创建 Deployment
 
-下面是 Deployment 示例.其中创建了一个 ReplicaSet,负责启动三个 nginx Pods：
+下面是 Deployment 示例.其中创建了一个 ReplicaSet,负责启动三个 nginx Pods:
 
 ```shell
 # 创建yaml文件
@@ -488,12 +488,17 @@ Events:
 
 ### 2.3. DaemonSet
 
-DaemonSet 确保全部(或者一些)Node上运行一个 Pod 的副本.当有 Node 加入集群时,也会为它们新增一个 Pod,当有 Node 从集群移除时,这些 Pod 也会被回收.删除 DaemonSet 将会删除它创建的所有 Pod.
-使用 DaemonSet 的一些典型用法：
+DaemonSet 确保全部(或者一些)Node节点上运行一个 Pod 的副本.当有 Node 加入集群时,也会为它们新增一个 Pod,当有 Node 从集群移除时,这些 Pod 也会被回收.删除 DaemonSet 将会删除它创建的所有 Pod.
 
-- 运行集群存储 deamon,例如在每个 Node 上运行  glusterd、ceph
-- 在每个 Node 上运行日志收集 deamon,例如 fluentd、logstash
-- 在每个 Node 上运行监控 daemon,例如 Prometheus Node Exporter
+DaemonSet典型用法:
+
+- 在每个节点上运行集群存储 DaemonSet,例如 glusterd、ceph.
+- 在每个节点上运行日志收集 DaemonSet,例如 fluentd、logstash.
+- 在每个节点上运行监控 DaemonSet,例如 Prometheus Node Exporter、Flowmill、Sysdig 代理、collectd、Dynatrace OneAgent、AppDynamics 代理、Datadog 代理、New Relic 代理、Ganglia gmond 或者 Instana 代理.
+
+一个简单的用法是在所有的节点上都启动一个 DaemonSet,并作为每种类型的 daemon 使用.
+
+一个稍微复杂的用法是单独对每种 daemon 类型使用一种DaemonSet.这样有多个 DaemonSet,但具有不同的标识,并且对不同硬件类型具有不同的内存、CPU 要求.
 
 ```shell
 [root@k8s-master k_base]# kubectl explain ds
@@ -506,93 +511,64 @@ DESCRIPTION:
 FIELDS:
 ...
 # 创建yaml
-[root@k8s-master k_base]# vi daemonset-example.yaml
+[root@k8s-master k_base]# pwd
+/app/kubernetes/k_base
+[root@k8s-master k_base]# cat daemonset.yaml 
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: daemonset-example
+  name: fluentd-elasticsearch
+  namespace: default
   labels:
-    app: daemonset
+    k8s-app: fluentd-logging
 spec:
   selector:
     matchLabels:
-      name: daemonset-example
+      name: fluentd-elasticsearch
   template:
     metadata:
       labels:
-        name: daemonset-example
+        name: fluentd-elasticsearch
     spec:
+      tolerations:
+      # 允许在master节点运行
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
       containers:
-      - name: daemonset-example
-        image: wangyanglinux/myapp:v1
-[root@k8s-master k_base]# kubectl get po
-NAME                      READY   STATUS    RESTARTS   AGE
-daemonset-example-f57kg   1/1     Running   0          25s
-[root@k8s-master k_base]# kubectl get ds
-NAME                DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
-daemonset-example   1         1         1       1            1           <none>          27s
+      - name: fluentd-elasticsearch
+        image: registry.cn-beijing.aliyuncs.com/google_registry/fluentd:v2.5.2
+        resources:
+          limits:
+            cpu: 1
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      # 优雅关闭应用,时间设置.超过该时间会强制关闭,默认30秒
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+[root@k8s-master k_base]# kubectl apply -f daemonset.yaml 
+daemonset.apps/fluentd-elasticsearch created
+[root@k8s-master k_base]# kubectl get ds -o wide
+NAME                    DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE    CONTAINERS              IMAGES                                                            SELECTOR
+fluentd-elasticsearch   2         2         2       2            2           <none>          103s   fluentd-elasticsearch   registry.cn-beijing.aliyuncs.com/google_registry/fluentd:v2.5.2   name=fluentd-elasticsearch
+# 我这里只启了master和node1节点, 可见DaemonSet在每个节点上都有相应的pod
 [root@k8s-master k_base]# kubectl get po -o wide
-NAME                      READY   STATUS    RESTARTS   AGE   IP              NODE        NOMINATED NODE   READINESS GATES
-daemonset-example-f57kg   1/1     Running   0          74s   172.16.36.118   k8s-node1   <none>           <none>
-[root@k8s-master k_base]# curl 172.16.36.118
-Hello MyApp | Version: v1 | <a href="hostname.html">Pod Name</a>
-[root@k8s-master k_base]# kubectl describe po daemonset-example-f57kg
-Name:         daemonset-example-f57kg
-Namespace:    default
-Priority:     0
-Node:         k8s-node1/192.168.43.20
-Start Time:   Mon, 23 Nov 2020 04:38:37 -0500
-Labels:       controller-revision-hash=5867b74f5c
-              name=daemonset-example
-              pod-template-generation=1
-Annotations:  cni.projectcalico.org/podIP: 172.16.36.118/32
-              cni.projectcalico.org/podIPs: 172.16.36.118/32
-Status:       Running
-IP:           172.16.36.118
-IPs:
-  IP:           172.16.36.118
-Controlled By:  DaemonSet/daemonset-example
-Containers:
-  daemonset-example:
-    Container ID:   docker://8f5dbe49a96a7a00a310a6ab0e442db39a55ffd67361cb6432078cc1d13dead3
-    Image:          wangyanglinux/myapp:v1
-    Image ID:       docker-pullable://wangyanglinux/myapp@sha256:9c3dc30b5219788b2b8a4b065f548b922a34479577befb54b03330999d30d513
-    Port:           <none>
-    Host Port:      <none>
-    State:          Running
-      Started:      Mon, 23 Nov 2020 04:39:00 -0500
-    Ready:          True
-    Restart Count:  0
-    Environment:    <none>
-    Mounts:
-      /var/run/secrets/kubernetes.io/serviceaccount from default-token-64lwm (ro)
-Conditions:
-  Type              Status
-  Initialized       True
-  Ready             True
-  ContainersReady   True
-  PodScheduled      True
-Volumes:
-  default-token-64lwm:
-    Type:        Secret (a volume populated by a Secret)
-    SecretName:  default-token-64lwm
-    Optional:    false
-QoS Class:       BestEffort
-Node-Selectors:  <none>
-Tolerations:     node.kubernetes.io/disk-pressure:NoSchedule op=Exists
-                 node.kubernetes.io/memory-pressure:NoSchedule op=Exists
-                 node.kubernetes.io/not-ready:NoExecute op=Exists
-                 node.kubernetes.io/pid-pressure:NoSchedule op=Exists
-                 node.kubernetes.io/unreachable:NoExecute op=Exists
-                 node.kubernetes.io/unschedulable:NoSchedule op=Exists
-Events:
-  Type    Reason     Age    From               Message
-  ----    ------     ----   ----               -------
-  Normal  Scheduled  2m47s  default-scheduler  Successfully assigned default/daemonset-example-f57kg to k8s-node1
-  Normal  Pulling    2m46s  kubelet            Pulling image "wangyanglinux/myapp:v1"
-  Normal  Pulled     2m24s  kubelet            Successfully pulled image "wangyanglinux/myapp:v1" in 21.955882149s
-  Normal  Created    2m24s  kubelet            Created container daemonset-example
-  Normal  Started    2m24s  kubelet            Started container daemonset-example
+NAME                            READY   STATUS             RESTARTS   AGE    IP               NODE         NOMINATED NODE   READINESS GATES
+fluentd-elasticsearch-cbl4x     1/1     Running            0          109s   172.16.36.106    k8s-node1    <none>           <none>
+fluentd-elasticsearch-pzlpv     1/1     Running            0          108s   172.16.235.250   k8s-master   <none>           <none>
 ```
 
 ### 2.4. Job
@@ -643,15 +619,15 @@ pi-2nlj5   0/1     Completed   0          4m54s   172.16.36.119   k8s-node1   <n
 
 ### 2.5. CronJob
 
-Cron Job 管理基于时间的 Job,即：
+Cron Job 管理基于时间的 Job,即:
 
 在给定时间点只运行一次
 周期性地在给定时间点运行
 
-典型的用法示例：
+典型的用法示例:
 
 在给你写的时间点调度 Job 运行
-创建周期性运行的 Job,例如：数据库备份、发送邮件
+创建周期性运行的 Job,例如: 数据库备份、发送邮件
 
 ```shell
 [root@k8s-master k_base]# kubectl explain cj
@@ -715,9 +691,9 @@ No resources found in default namespace.
 
 StatefulSet 是用来管理有状态应用的工作负载 API 对象.
 
-StatefulSet 中的 Pod 拥有独一无二的身份标识.这个标识基于 StatefulSet 控制器分配给每个 Pod 的唯一顺序索引.Pod 的名称的形式为`<statefulset name>-<ordinal index>` .例如：web的StatefulSet 拥有两个副本,所以它创建了两个 Pod：web-0和web-1.
+StatefulSet 中的 Pod 拥有独一无二的身份标识.这个标识基于 StatefulSet 控制器分配给每个 Pod 的唯一顺序索引.Pod 的名称的形式为`<statefulset name>-<ordinal index>` .例如: web的StatefulSet 拥有两个副本,所以它创建了两个 Pod: web-0和web-1.
 
-和 Deployment 相同的是,StatefulSet 管理了基于相同容器定义的一组 Pod.但和 Deployment 不同的是,StatefulSet 为它们的每个 Pod 维护了一个固定的 ID.这些 Pod 是基于相同的声明来创建的,但是不能相互替换：无论怎么调度,每个 Pod 都有一个永久不变的 ID.
+和 Deployment 相同的是,StatefulSet 管理了基于相同容器定义的一组 Pod.但和 Deployment 不同的是,StatefulSet 为它们的每个 Pod 维护了一个固定的 ID.这些 Pod 是基于相同的声明来创建的,但是不能相互替换: 无论怎么调度,每个 Pod 都有一个永久不变的 ID.
 
 使用场景:
 
@@ -730,7 +706,7 @@ StatefulSet 中的 Pod 拥有独一无二的身份标识.这个标识基于 Stat
 
 如果应用程序不需要任何稳定的标识符或有序的部署、删除或伸缩,则应该使用由一组无状态的副本控制器提供的工作负载来部署应用程序,比如使用 Deployment 或者 ReplicaSet 可能更适用于无状态应用部署需要.
 
-#### 限制
+#### 2.6.1. 限制
 
 - 给定 Pod 的存储必须由 PersistentVolume(PV) 驱动基于所请求的 storage class 来提供,或者由管理员预先提供.
 - 删除或者收缩 StatefulSet 并不会删除它关联的存储卷.这样做是为了保证数据安全,它通常比自动清除 StatefulSet 所有相关的资源更有价值.
@@ -738,13 +714,13 @@ StatefulSet 中的 Pod 拥有独一无二的身份标识.这个标识基于 Stat
 - 当删除 StatefulSets 时,StatefulSet 不提供任何终止 Pod 的保证.为了实现 StatefulSet 中的 Pod 可以有序和优雅的终止,可以在删除之前将 StatefulSet 缩放为 0.
 - 在默认 Pod 管理策略(OrderedReady) 时使用滚动更新,可能进入需要人工干预才能修复的损坏状态.
 
-#### 有序索引
+#### 2.6.2. 有序索引
 
 对于具有 N 个副本的 StatefulSet,StatefulSet 中的每个 Pod 将被分配一个整数序号,从 0 到 N-1,该序号在 StatefulSet 上是唯一的.
 
 StatefulSet 中的每个 Pod 根据 StatefulSet 中的名称和 Pod 的序号来派生出它的主机名.组合主机名的格式为`<statefulset name>-<ordinal index>`.
 
-#### 部署和扩缩保证
+#### 2.6.3. 部署和扩缩保证
 
 - 对于包含 N 个 副本的 StatefulSet,当部署 Pod 时,它们是依次创建的,顺序为 0~(N-1).
 - 当删除 Pod 时,它们是逆序终止的,顺序为 (N-1)~0.
@@ -753,13 +729,13 @@ StatefulSet 中的每个 Pod 根据 StatefulSet 中的名称和 Pod 的序号来
 
 StatefulSet 不应将 pod.Spec.TerminationGracePeriodSeconds 设置为 0.这种做法是不安全的,要强烈阻止.
 
-#### 部署顺序
+#### 2.6.4. 部署顺序
 
 在下面的 nginx 示例被创建后,会按照 web-0、web-1、web-2 的顺序部署三个 Pod.在 web-0 进入 Running 和 Ready 状态前不会部署 web-1.在 web-1 进入 Running 和 Ready 状态前不会部署 web-2.
 
 如果 web-1 已经处于 Running 和 Ready 状态,而 web-2 尚未部署,在此期间发生了 web-0 运行失败,那么 web-2 将不会被部署,要等到 web-0 部署完成并进入 Running 和 Ready 状态后,才会部署 web-2.
 
-#### 收缩顺序
+#### 2.6.5. 收缩顺序
 
 如果想将示例中的 StatefulSet 收缩为 replicas=1,首先被终止的是 web-2.在 web-2 没有被完全停止和删除前,web-1 不会被终止.当 web-2 已被终止和删除；但web-1 尚未被终止,如果在此期间发生 web-0 运行失败,那么就不会终止 web-1,必须等到 web-0 进入 Running 和 Ready 状态后才会终止 web-1.
 
@@ -780,7 +756,7 @@ FIELDS:
 ...
 ```
 
-#### StatefulSet实例
+#### 2.6.6. StatefulSet实例
 
 ```shell
 [root@k8s-master k_base]# pwd
@@ -871,5 +847,59 @@ Address 7: 172.16.36.96 web-0.nginx.default.svc.cluster.local
 
 ### 2.7. Horizontal Pod Autoscaling(HPA)
 
-顾名思义,使 Pod 水平自动缩放,提高集群的整体资源利用率.
-Horizontal Pod Autoscaling 仅适用于 Deployment 和 ReplicaSet.在 v1 版本中仅支持根据 Pod 的 CPU 利用率扩缩容,在 v1alpha 版本中,支持根据内存和用户自定义的 metric 扩缩容.
+顾名思义, Pod 水平自动缩放,提高集群的整体资源利用率.
+
+Horizontal Pod Autoscaling可以根据指标自动伸缩一个Replication Controller、Deployment 或者Replica Set中的Pod数量
+
+下面是HPA工作简单模型图:
+
+![20201222152148](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201222152148.png)
+
+主要分两个版本:
+
+- autoscaling/v1: v1版本只支持 cpu
+- autoscaling/v2beta2: v2beta2版本支持 自定义 ,内存 ,但是目前也仅仅是处于beta阶段
+
+#### 2.7.1. 指标从哪里来
+
+Horizontal Pod AutoScaler被实现为一个控制循环,周期由控制器管理器的–Horizontal Pod AutoScaler sync period标志(默认值为15秒)控制.
+
+在每个期间,控制器管理器都会根据每个HorizontalPodAutoScaler定义中指定的度量来查询资源利用率.控制器管理器从资源度量api(针对每个pod的资源度量)或自定义度量api(针对所有其他度量)获取度量.
+
+对于每个pod的资源度量(如cpu),控制器从horizontalpodautoscaler针对每个pod的资源度量api获取度量.然后,如果设置了目标利用率值,则控制器将利用率值计算为每个pod中容器上等效资源请求的百分比.如果设置了目标原始值,则直接使用原始度量值.然后,控制器获取所有目标pod的利用率平均值或原始值(取决于指定的目标类型),并生成用于缩放所需副本数量的比率.
+
+#### 2.7.2. 为什么目前能使用的指标是CPU
+
+v1的模板可能是大家平时见到最多的也是最简单的,v1版本的HPA只支持一种指标 —— CPU.传统意义上,弹性伸缩最少也会支持CPU与Memory两种指标,为什么在Kubernetes中只放开了CPU呢?其实最早的HPA是计划同时支持这两种指标的,但是实际的开发测试中发现,内存不是一个非常好的弹性伸缩判断条件.因为和CPU不同,很多内存型的应用,并不会因为HPA弹出新的容器而带来内存的快速回收,因为很多应用的内存都要交给语言层面的VM进行管理,也就是内存的回收是由VM的GC来决定的.这就有可能因为GC时间的差异导致HPA在不恰当的时间点震荡,因此在v1的版本中,HPA就只支持了CPU一种指标.
+
+#### 2.7.3. HPA与rolling update的区别
+
+目前在kubernetes中,可以通过直接管理复制控制器来执行滚动更新,也可以使用deployment对象来管理底层副本集.HPA只支持后一种方法: HPA绑定到部署对象,设置部署对象的大小,部署负责设置底层副本集的大小.
+
+HPA不能使用复制控制器的直接操作进行滚动更新,即不能将HPA绑定到复制控制器并进行滚动更新(例如,使用Kubectl滚动更新).这不起作用的原因是,当滚动更新创建新的复制控制器时,HPA将不会绑定到新的复制控制器.
+
+#### 2.7.4. HPA怎么来使用
+
+1.使用kubectl的方式
+
+```shell
+kubectl autoscale deployment php-apache --cpu-percent=50 --min=1 --max=10
+```
+
+2.使用yaml创建
+
+```shell
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: php-apache
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: php-apache
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 50
+```
