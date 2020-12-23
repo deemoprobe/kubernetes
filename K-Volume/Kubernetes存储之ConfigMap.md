@@ -6,6 +6,13 @@ ConfigMap 将环境配置信息和容器镜像解耦,便于应用配置的修改
 
 备注: ConfigMap 并不提供保密或者加密功能.如果你想存储的数据是机密的,请使用 Secret;或者使用其他第三方工具来保证数据的私密性.而不是用 ConfigMap.
 
+ConfigMap的一些**限制**:
+
+- 如需获取cm的内容到容器,则ConfigMap必须在Pod之前创建
+- ConfigMap受Namespace限制,只有和cm处于相同Namespace下的才可以引用它
+- 静态Pod无法引用cm
+- 使用volumeMounts给Pod挂载cm时,mountPath只能是目录,而不能是文件;容器内部该目录下如果原有文件,那么将会被新挂载的cm覆盖
+
 ## 1. ConfigMap创建方式
 
 ### 1.1. 通过目录创建
@@ -213,7 +220,7 @@ kind: ConfigMap
 metadata:
   name: configmap-demo
 data:
-  # 类属性键；每一个键都映射到一个简单的值
+  # 类属性键;每一个键都映射到一个简单的值
   player_initial_lives: "3"
   ui_properties_file_name: 'user-interface.properties'
   # 类文件键
