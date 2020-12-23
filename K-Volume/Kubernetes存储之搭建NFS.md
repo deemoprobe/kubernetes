@@ -1,6 +1,6 @@
 # Kubernetes存储之搭建NFS
 
-## NFS工作原理简介
+## 1. NFS工作原理简介
 
 CentOS 7 版本启动 NFS SERVER 之前,首先要启动 RPC 服务,否则 NFS SERVER 就无法向 RPC 服务注册.
 
@@ -12,7 +12,7 @@ CentOS 7 版本启动 NFS SERVER 之前,首先要启动 RPC 服务,否则 NFS SE
 
 注意:一台机器不要同时做 NFS 的服务端和 NFS 的客户端.如果同时作了 NFS 的服务端和客户端,那么在关机的时候,会一直夯住,可能十分钟之后甚至更久才能关闭成功.
 
-## 安装NFS和RPC服务(服务端和客户端均安装)
+## 2. 安装NFS和RPC服务(服务端和客户端均安装)
 
 ```shell
 # 安装NFS和RPC
@@ -31,7 +31,7 @@ rpcuser:x:29:29:RPC Service User:/var/lib/nfs:/sbin/nologin
 nfsnobody:x:65534:65534:Anonymous NFS User:/var/lib/nfs:/sbin/nologin
 ```
 
-## 配置NFS服务端
+## 3. 配置NFS服务端
 
 ```shell
 [root@nfs ~]# mkdir /data
@@ -165,7 +165,7 @@ Export list for 192.168.43.136:
 
 ```
 
-## 配置NFS客户端
+## 4. 配置NFS客户端
 
 ```shell
 # 启动rpcbind
@@ -186,7 +186,7 @@ Filesystem               Size  Used Avail Use% Mounted on
 192.168.43.136:/data /mnt nfs4 rw,relatime,vers=4.1,rsize=262144,wsize=262144,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.43.20,local_lock=none,addr=192.168.43.136 0 0
 ```
 
-## 测试
+## 5. 测试
 
 客户端: k8s-master; k8s-node1
 服务端: nfs
@@ -233,7 +233,7 @@ k8s-master
 k8s-node1
 ```
 
-## 是否加入开机自启动
+## 6. 是否加入开机自启动
 
 如果客户端需要开机自动挂载NFS, 若是方式1, 必须保证 /etc/rc.d/rc.local 文件具有可执行权限，否则该脚本不会执行也不会生效。
 
@@ -258,7 +258,7 @@ mount -t nfs 192.168.43.136:/data /mnt
 192.168.43.136:/data    /mnt                    nfs     defaults        0 0
 ```
 
-## 存在问题
+## 7. 存在问题
 
 加入了开机自启动，当重启 NFS 客户端机器时，如果此时 NFS 服务端机器已关机，或者网络存在问题(网络断连或IP变更)等等。使 NFS 客户端连接 NFS 服务端失败，那么此时会造成 NFS 客户端机器起不来的情况。
 
