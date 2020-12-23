@@ -109,7 +109,7 @@ how.nice.to.look=fairlyNice
 Events:  <none>
 ```
 
-## 2. 通过文件创建
+### 1.2. 通过文件创建
 
 `--from-file`指定对应配置文件, 可以多次使用引入不同的配置文件
 
@@ -174,7 +174,7 @@ secret.code.lives=30
 Events:  <none>
 ```
 
-## 3. 通过命令行创建
+### 1.3. 通过命令行创建
 
 `--from-literal`传递配置参数, 可多次使用
 
@@ -203,7 +203,7 @@ Events:  <none>
 
 ```
 
-## 4. 通过YAML文件创建
+### 1.4. 通过YAML文件创建
 
 ```shell
 # 创建文件
@@ -255,11 +255,11 @@ color.bad=yellow
 Events:  <none>
 ```
 
-## 5. Pod中使用ConfigMap
+## 2. Pod中使用ConfigMap
 
 在Pod中使用configmap配置信息
 
-### 5.1. 查看当前的configmap
+### 2.1. 查看当前的configmap
 
 ```shell
 [root@k8s-master volume]# kubectl get cm
@@ -270,7 +270,7 @@ game-config-file   1      19m
 special-config     2      9m2s
 ```
 
-### 5.2. 用configmap来代替环境变量
+### 2.2. 用configmap来代替环境变量
 
 ```shell
 # 创建Pod
@@ -331,7 +331,7 @@ MYAPP_SVC_PORT_80_TCP=tcp://10.98.57.156:80
 ...
 ```
 
-## 6. 使用ConfigMap设置命令行参数
+## 3. 使用ConfigMap设置命令行参数
 
 ```shell
 # 创建yaml文件
@@ -367,7 +367,7 @@ pod-configmap-cmd   0/1     Completed   0          51s
 ===very===charm===
 ```
 
-## 7. 通过数据卷插件使用ConfigMap
+## 4. 通过数据卷插件使用ConfigMap
 
 在数据卷里面使用ConfigMap,最基本的就是将文件填入数据卷,在这个文件中,键就是文件名【第一层级的键】,键值就是文件内容.
 
@@ -440,9 +440,9 @@ color.bad=yellow
 /etc/config # 
 ```
 
-## 8. ConfigMap热更新
+## 5. ConfigMap热更新
 
-### 8.1. 准备工作
+### 5.1. 准备工作
 
 ```shell
 # 创建yaml文件,创建ConfigMap和Deploy
@@ -514,7 +514,7 @@ Events:  <none>
 INFO
 ```
 
-### 8.2. 热更新log_level
+### 5.2. 热更新log_level
 
 ```shell
 # 修改log_level=DEBUG
