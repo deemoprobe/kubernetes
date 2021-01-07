@@ -103,7 +103,7 @@ kube-system       Active   55d
 test              Active   11d
 ```
 
-初始状态下，Kubernetes 具有三个名字空间：
+初始状态下,Kubernetes 具有三个名字空间：
 
 - default 默认的namespace,默认情况下用户创建的资源都是在这个namespace下.
 - kube-system 由 Kubernetes 系统创建的对象的namespace.
@@ -130,12 +130,12 @@ No LimitRange resource.
 
 ### 创建和删除
 
-> 说明： 避免使用前缀 kube- 创建namespace，因为它是为 Kubernetes 系统namespace保留的.
+> 说明： 避免使用前缀 kube- 创建namespace,因为它是为 Kubernetes 系统namespace保留的.
 
 Namespace命名规则:
 
 - 最多63个字符
-- 只能包含字母数字，以及'-'
+- 只能包含字母数字,以及'-'
 - 须以字母或数字开头
 - 须以字母或数字结尾
 
