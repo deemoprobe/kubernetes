@@ -109,6 +109,26 @@ FIELDS:
 ...
 ```
 
+Kubernetes可对API对象执行增删改查CRUD(Create、Read、Update、Delete)操作. 常用资源如下:
+
+- Pods
+- ConfigMaps
+- Deployments
+- Nodes
+- Secrets
+- Namespaces
+
+资源对象可能存在的操作(verb)有如下:
+
+- create
+- get
+- delete
+- list
+- update
+- edit
+- watch
+- exec
+
 ### 4.1. Role 和 ClusterRole
 
 在 RBAC API 中,一个角色包含一组相关权限的规则.权限是纯粹累加的(不存在拒绝某操作的规则),即只能给权限累加,不存在给了XX权限,然后去掉XX01权限的情况.角色可以用 Role 来定义到某个命名空间(namespace)上, 或者用 ClusterRole 来定义到整个集群作用域(所有namespace).
