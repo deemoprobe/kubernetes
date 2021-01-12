@@ -1,20 +1,20 @@
 # Kubernetes网络之Ingress
 
+> 本文通过Helm部署Nginx-Ingress.
+
 Ingress 是对集群中服务的外部访问进行管理的 API 对象，典型的访问方式是 HTTP和HTTPS.
 
 Ingress 可以提供负载均衡、SSL 和基于名称的虚拟托管.
 
 必须具有 ingress 控制器[例如 ingress-nginx]才能满足 Ingress 的要求.仅创建 Ingress 资源无效.
 
-本文通过Helm部署Nginx-Ingress.
-
-## Ingress原理
+## 1. Ingress原理
 
 Ingress 公开了从集群外部到集群内 services 的 HTTP 和 HTTPS 路由. 流量路由由 Ingress 资源上定义的规则控制.
 
 ```mermaid
 graph TD
-    QInternet -.-> D((Ingress))
+    Internet -.-> D((Ingress))
     D((Ingress)) -.-> A(Service1)
     D((Ingress)) -.-> B(Service2)
     D((Ingress)) -.-> C(Service.n)
@@ -34,7 +34,7 @@ Nginx Ingress架构简易示意图
 
 ![Ingress-Nginx](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/Ingress-Nginx.jpg)
 
-## 部署Helm 3.4
+## 2. 部署Helm 3.4
 
 helm通过打包的方式，支持发布的版本管理和控制，很大程度上简化了Kubernetes应用的部署和管理.
 
@@ -61,7 +61,7 @@ NAME    URL
 apphub  https://apphub.aliyuncs.com
 ```
 
-## Nginx-Ingress简单实例
+## 3. Nginx-Ingress简单实例
 
 ```shell
 # 切换到dev这个namespace下
@@ -312,7 +312,7 @@ nginx-ingress-nginx-ingress-controller-default-backend   ClusterIP      192.168.
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 192.168.43.10   k8s-master
 192.168.43.20   k8s-node1
-192.168.177.62  nginx.ingress.com
+172.42.42.101   nginx.ingress.com
 [root@k8s-master ingress]# curl http://nginx.ingress.com
 <!DOCTYPE html>
 <html>
@@ -327,11 +327,11 @@ nginx-ingress-nginx-ingress-controller-default-backend   ClusterIP      192.168.
 
 ![20210111153621](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210111153621.png)
 
-## Nginx-Ingress综合实例
+## 4. Nginx-Ingress综合实例
 
 通过部署两套Service来实现: HTTP代理访问/HTTPS代理访问/BasicAuth认证/Rewrite重写验证, 并为之分配不同的域名进行区分.
 
-### 创建deploy-svc1
+### 4.1. 创建deploy-svc1
 
 ```shell
 [root@k8s-master ingress]# vi deploy-svc1.yaml
@@ -413,7 +413,7 @@ myapp-deploy1-6c468d6b6c-mzqwd
 myapp-deploy1-6c468d6b6c-cq44z
 ```
 
-### 创建deploy-svc2
+### 4.2. 创建deploy-svc2
 
 ```shell
 [root@k8s-master ingress]# vi deploy-svc2.yaml 
@@ -482,7 +482,7 @@ myapp-deploy2-5fffdcccd5-vpcj9
 myapp-deploy2-5fffdcccd5-25qz4
 ```
 
-### HTTP代理访问
+### 4.3. HTTP代理访问
 
 ```shell
 [root@k8s-master ingress]# vi ingress-http.yaml
@@ -529,14 +529,15 @@ nginx-ingress-nginx-ingress-controller-default-backend-7ccrfv9m   1/1     Runnin
 
 # 将域名加入/etc/hosts
 [root@k8s-master ingress]# vi /etc/hosts
+[root@k8s-master ingress]# cat /etc/hosts
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 192.168.43.10   k8s-master
 192.168.43.20   k8s-node1
-192.168.177.62  nginx.ingress.com
-#192.168.226.120 www.nginx-ingress.com
-#192.168.114.169 info.nginx-ingress.com
-172.16.36.72 www.nginx-ingress.com info.nginx-ingress.com
+# 简单实例
+172.42.42.101   nginx.ingress.com
+# 综合实例
+172.42.42.101   www.nginx-ingress.com info.nginx-ingress.com
 
 # curl访问
 [root@k8s-master ingress]# curl http://www.nginx-ingress.com
@@ -547,13 +548,305 @@ Hello MyApp | Version: v2 | <a href="hostname.html">Pod Name</a>
 
 > 说明:实际环境中是对节点的外部IP进行访问, 只需要为节点分配好对应的外部IP即可, 然后在物理机上配置好hosts域名解析, 浏览器访问即可
 
-### HTTPS代理访问
+#### 4.3.1. 本地Windows系统下浏览器访问http
+
+编辑文件 C:\WINDOWS\System32\drivers\etc\hosts
+
+> 如果提示没有权限, 在文件属性里给User用户(当前所用用户)赋权即可编辑写入
+
+hosts文件权限更改图:
+
+![20210112100434](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112100434.png)
+
+添加信息如下:
+
+```shell
+# kubernetes ingress
+172.42.42.101   www.nginx-ingress.com info.nginx-ingress.com
+```
+
+浏览器访问结果图:
+
+> 访问<http://www.nginx-ingress.com>和<http://www.nginx-ingress.com/hostname.html>
+
+![20210112100558](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112100558.png)
+![20210112101041](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112101041.png)
+
+> 访问<http://info.nginx-ingress.com>和<http://info.nginx-ingress.com/hostname.html>
+
+![20210112100628](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112100628.png)
+![20210112101051](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112101051.png)
+
+```shell
+# 可以看到访问的hostname(即PodName)是当前在运行的PodName
+[root@k8s-master cert]# kubectl get po
+NAME                                                              READY   STATUS    RESTARTS   AGE
+myapp-deploy1-6c468d6b6c-cq44z                                    1/1     Running   1          17h
+myapp-deploy1-6c468d6b6c-mzqwd                                    1/1     Running   1          17h
+myapp-deploy2-5fffdcccd5-25qz4                                    1/1     Running   1          17h
+myapp-deploy2-5fffdcccd5-vpcj9                                    1/1     Running   1          17h
+```
+
+### 4.4. HTTPS代理访问
+
+#### 4.4.1. 创建SSL证书
 
 ```shell
 [root@k8s-master kubernetes]# mkdir cert;cd cert
-备注:切换到dev这个namespace下操作
+[root@k8s-master cert]# openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/C=CN/ST=BJ/L=BeiJing/O=BTC/OU=MOST/CN=deemoprobe/emailAddress=ca@test.com"
+Generating a 2048 bit RSA private key
+........+++
+........................................................................+++
+writing new private key to 'tls.key'
+-----
+[root@k8s-master cert]# ls
+tls.crt  tls.key
+[root@k8s-master cert]# kubectl create secret tls tls-secret --key tls.key --cert tls.crt
+secret/tls-secret created
 ```
 
-### Nginx-Ingress BasicAuth认证
+#### 4.4.2. 创建ingress https
 
-### Nginx-Ingress Rewrite重写验证
+```shell
+[root@k8s-master cert]# cd ../ingress/
+[root@k8s-master ingress]# vi ingress-https.yaml 
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: nginx-https
+  namespace: dev
+spec:
+  tls:
+    - hosts:
+      - www.nginx-ingress.com
+      - info.nginx-ingress.com
+      secretName: tls-secret
+  rules:
+    - host: www.nginx-ingress.com
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: myapp-svc1
+            servicePort: 80
+    - host: info.nginx-ingress.com
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: myapp-svc2
+            servicePort: 80
+[root@k8s-master ingress]# kubectl apply -f ingress-https.yaml 
+ingress.networking.k8s.io/nginx-https created
+# 查看ingress
+[root@k8s-master ingress]# kubectl get ingress -o wide
+NAME          CLASS    HOSTS                                          ADDRESS         PORTS     AGE
+my-nginx      <none>   nginx.ingress.com                              192.168.43.20   80        19h
+nginx-http    <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.168.43.20   80        17h
+nginx-https   <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.168.43.20   80, 443   53s
+```
+
+#### 4.4.3. 本地Windows系统下浏览器访问https
+
+> 编辑文件 C:\WINDOWS\System32\drivers\etc\hosts 添加对应的域名信息, 由于我用的和上面的http映射一样, 所以直接使用即可
+
+访问时会提示不安全, 此时点击高级继续访问即可(由于该域名证书是自颁发而非CA机构颁发的证书,用来测试ingress,所以会提示不安全)
+
+![20210112102800](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112102800.png)
+
+浏览器访问结果图:
+
+> 访问<https://www.nginx-ingress.com>和<https://www.nginx-ingress.com/hostname.html>
+
+![20210112102830](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112102830.png)
+![20210112102846](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112102846.png)
+
+> 访问<https://info.nginx-ingress.com>和<https://info.nginx-ingress.com/hostname.html>
+
+![20210112102915](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112102915.png)
+![20210112102931](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112102931.png)
+
+```shell
+# 可以看到访问的hostname(即PodName)是当前在运行的PodName
+[root@k8s-master cert]# kubectl get po
+NAME                                                              READY   STATUS    RESTARTS   AGE
+myapp-deploy1-6c468d6b6c-cq44z                                    1/1     Running   1          17h
+myapp-deploy1-6c468d6b6c-mzqwd                                    1/1     Running   1          17h
+myapp-deploy2-5fffdcccd5-25qz4                                    1/1     Running   1          17h
+myapp-deploy2-5fffdcccd5-vpcj9                                    1/1     Running   1          17h
+```
+
+### 4.5. Nginx-Ingress BasicAuth认证
+
+#### 4.5.1. 准备
+
+```shell
+[root@k8s-master ingress]# yum install -y httpd
+[root@k8s-master ingress]# htpasswd -c auth deemoprobe
+New password: #输入密码
+Re-type new password: #确认密码
+Adding password for user deemoprobe
+# 会生成一个auth的文件
+[root@k8s-master ingress]# ls
+auth  deploy-svc1.yaml  deploy-svc2.yaml  ingress-https.yaml  ingress-http.yaml  mandatory.yaml  ngdemo.yaml
+[root@k8s-master ingress]# cat auth 
+deemoprobe:$apr1$7163wKOY$efGLFSlm6.dSHwIbaU6Ym0
+# 创建secret
+[root@k8s-master ingress]# kubectl create secret generic basic-auth --from-file=auth
+secret/basic-auth created
+[root@k8s-master ingress]# kubectl get secret basic-auth -o yaml
+apiVersion: v1
+data:
+  auth: ZGVlbW9wcm9iZTokYXByMSQ3MTYzd0tPWSRlZkdMRlNsbTYuZFNId0liYVU2WW0wCg==
+kind: Secret
+metadata:
+  creationTimestamp: "2021-01-12T02:35:33Z"
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:data:
+        .: {}
+        f:auth: {}
+      f:type: {}
+    manager: kubectl-create
+    operation: Update
+    time: "2021-01-12T02:35:33Z"
+  name: basic-auth
+  namespace: dev
+  resourceVersion: "793103"
+  selfLink: /api/v1/namespaces/dev/secrets/basic-auth
+  uid: c84f1541-9aba-4326-9142-3517bdcdfc34
+type: Opaque
+```
+
+#### 4.5.2. 创建ingress
+
+```shell
+[root@k8s-master ingress]# vi nginx-ingress-basicauth.yaml
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-with-auth
+  annotations:
+    # type of authentication
+    nginx.ingress.kubernetes.io/auth-type: basic
+    # name of the secret that contains the user/password definitions
+    nginx.ingress.kubernetes.io/auth-secret: basic-auth
+    # message to display with an appropriate context why the authentication is required
+    nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required - deemoprobe'
+spec:
+  rules:
+  - host: auth.nginx-ingress.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: myapp-svc1
+          servicePort: 80
+[root@k8s-master ingress]# kubectl apply -f nginx-ingress-basicauth.yaml 
+ingress.networking.k8s.io/ingress-with-auth created
+[root@k8s-master ingress]# kubectl get ingress -o wide
+NAME                CLASS    HOSTS                                          ADDRESS         PORTS     AGE
+ingress-with-auth   <none>   auth.nginx-ingress.com                                         80        14s
+my-nginx            <none>   nginx.ingress.com                              192.168.43.20   80        19h
+nginx-http          <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.168.43.20   80        18h
+nginx-https         <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.168.43.20   80, 443   19m
+```
+
+#### 4.5.3. 浏览器访问auth
+
+编辑文件 C:\WINDOWS\System32\drivers\etc\hosts
+
+添加信息如下(在后面添加auth.nginx-ingress.com即可):
+
+```shell
+# kubernetes ingress
+172.42.42.101   www.nginx-ingress.com info.nginx-ingress.com auth.nginx-ingress.com
+```
+
+> 访问<http://auth.nginx-ingress.com/>
+
+输入账户密码进入myapp-svc1服务:
+![20210112104413](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112104413.png)
+![20210112104439](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112104439.png)
+
+### 4.6. Nginx-Ingress Rewrite重写验证
+
+重写可以使用以下注解控制:
+
+| 名称                                           | 描述                                                           | 值     |
+| ---------------------------------------------- | -------------------------------------------------------------- | ------ |
+| nginx.ingress.kubernetes.io/rewrite-target     | 必须重定向的目标URL                                            | String |
+| nginx.ingress.kubernetes.io/ssl-redirect       | 指示位置部分是否只能由SSL访问(当Ingress包含证书时，默认为True) | Bool   |
+| nginx.ingress.kubernetes.io/force-ssl-redirect | 即使Ingress没有启用TLS，也强制重定向到HTTPS                    | Bool   |
+| nginx.ingress.kubernetes.io/app-root           | 定义应用程序根目录，Controller在“/”上下文中必须重定向该根目录  | String |
+| nginx.ingress.kubernetes.io/use-regex          | 指示Ingress上定义的路径是否使用正则表达式                      | Bool   |
+
+```shell
+# 创建rewrite=ingress
+[root@k8s-master ingress]# vi nginx-ingress-rewrite.yaml 
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: https://kubernetes.io/
+  name: rewrite
+  namespace: dev
+spec:
+  rules:
+  - host: rewrite.nginx-ingress.com
+    http:
+      paths:
+      - backend:
+          serviceName: myapp-svc1
+          servicePort: 80
+[root@k8s-master ingress]# kubectl apply -f nginx-ingress-rewrite.yaml 
+ingress.networking.k8s.io/rewrite created
+[root@k8s-master ingress]# kubectl get ingress -o wide
+NAME                CLASS    HOSTS                                          ADDRESS         PORTS     AGE
+ingress-with-auth   <none>   auth.nginx-ingress.com                         192.168.43.20   80        14m
+my-nginx            <none>   nginx.ingress.com                              192.168.43.20   80        19h
+nginx-http          <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.168.43.20   80        18h
+nginx-https         <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.168.43.20   80, 443   34m
+rewrite             <none>   rewrite.nginx-ingress.com                                      80        12s
+```
+
+#### 4.6.1. 浏览器访问rewrite
+
+编辑文件 C:\WINDOWS\System32\drivers\etc\hosts
+
+添加信息如下(在后面添加rewrite.nginx-ingress.com即可):
+
+```shell
+# kubernetes ingress
+172.42.42.101   www.nginx-ingress.com info.nginx-ingress.com auth.nginx-ingress.com rewrite.nginx-ingress.com
+```
+
+> 访问<http://rewrite.nginx-ingress.com/>
+
+访问后会跳转到Kubernetes官网:
+![20210112105652](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112105652.png)
+![20210112110219](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112110219.png)
+
+#### 4.6.2. CentOS本地系统访问
+
+```shell
+# 先添加本地hosts
+[root@k8s-master ingress]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+192.168.43.10   k8s-master
+192.168.43.20   k8s-node1
+172.42.42.101  nginx.ingress.com
+172.42.42.101   www.nginx-ingress.com info.nginx-ingress.com auth.nginx-ingress.com rewrite.nginx-ingress.com
+# 可以看到已经进行了rewrite, 目标地址转向了https://kubernetes.io/
+[root@k8s-master ingress]# curl -I http://rewrite.nginx-ingress.com 
+HTTP/1.1 302 Moved Temporarily
+Server: openresty/1.15.8.1
+Date: Tue, 12 Jan 2021 02:59:51 GMT
+Content-Type: text/html
+Content-Length: 151
+Connection: keep-alive
+Location: https://kubernetes.io/
+```

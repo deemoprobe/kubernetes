@@ -38,7 +38,7 @@ configmap/config created
 NAME                                                     TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
 nginx-ingress-nginx-ingress-controller                   LoadBalancer   192.168.120.98   <pending>     80:31051/TCP,443:30469/TCP   28m
 nginx-ingress-nginx-ingress-controller-default-backend   ClusterIP      192.168.240.37   <none>        80/TCP                       28m
-# 安装MetalLB后, EXTERNAL-IP以根据配置的IP范围分配好, 当然这里是私有IP
+# 安装MetalLB后, EXTERNAL-IP以根据配置的IP范围分配好
 [root@k8s-master manifests]# kubectl get svc
 NAME                                                     TYPE           CLUSTER-IP       EXTERNAL-IP     PORT(S)                      AGE
 nginx-ingress-nginx-ingress-controller                   LoadBalancer   192.168.120.98   172.42.42.101   80:31051/TCP,443:30469/TCP   29m
