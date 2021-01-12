@@ -1,8 +1,8 @@
 # Kubernetes网络之Ingress
 
-> 本文通过Helm部署Nginx-Ingress.
+> 本文通过Helm部署Nginx-Ingress-Controller.
 
-Ingress 是对集群中服务的外部访问进行管理的 API 对象，典型的访问方式是 HTTP和HTTPS.
+Ingress 是对集群中服务的外部访问进行管理的 API 对象,典型的访问方式是 HTTP和HTTPS.
 
 Ingress 可以提供负载均衡、SSL 和基于名称的虚拟托管.
 
@@ -12,33 +12,23 @@ Ingress 可以提供负载均衡、SSL 和基于名称的虚拟托管.
 
 Ingress 公开了从集群外部到集群内 services 的 HTTP 和 HTTPS 路由. 流量路由由 Ingress 资源上定义的规则控制.
 
-```mermaid
-graph TD
-    Internet -.-> D((Ingress))
-    D((Ingress)) -.-> A(Service1)
-    D((Ingress)) -.-> B(Service2)
-    D((Ingress)) -.-> C(Service.n)
-```
+![20210112135036](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112135036.png)
 
-可以将 Ingress 配置为提供服务外部可访问的 URL、负载均衡流量、 SSL / TLS，以及提供基于名称的虚拟主机.Ingress 控制器 通常负责通过负载均衡器来实现 Ingress，尽管它也可以配置边缘路由器或其他前端来帮助处理流量.
+可以将 Ingress 配置为提供服务外部可访问的 URL、负载均衡流量、 SSL / TLS,以及提供基于名称的虚拟主机.Ingress 控制器 通常负责通过负载均衡器来实现 Ingress,尽管它也可以配置边缘路由器或其他前端来帮助处理流量.
 
-Ingress 不会公开任意端口或协议.若将 HTTP 和 HTTPS 以外的服务公开到 Internet 时，通常使用 Service.Type=NodePort 或者 Service.Type=LoadBalancer 类型的服务.
+Ingress 不会公开任意端口或协议.若将 HTTP 和 HTTPS 以外的服务公开到 Internet 时,通常使用 Service.Type=NodePort 或者 Service.Type=LoadBalancer 类型的服务.
 
-以Nginx Ingress为例，如图:
-
-![k8s-21-01](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/k8s-21-01.png)
-
-![k8s-21-02](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/k8s-21-02.png)
-
-Nginx Ingress架构简易示意图
+Nginx Ingress架构示意图:
 
 ![Ingress-Nginx](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/Ingress-Nginx.jpg)
 
+> 必须具有 Ingress 控制器 才能满足 Ingress 的要求。 仅创建 Ingress 资源本身没有任何效果。
+
 ## 2. 部署Helm 3.4
 
-helm通过打包的方式，支持发布的版本管理和控制，很大程度上简化了Kubernetes应用的部署和管理.
+helm通过打包的方式,支持发布的版本管理和控制,很大程度上简化了Kubernetes应用的部署和管理.
 
-Helm本质就是让k8s的应用管理（Deployment、Service等）可配置，能动态生成.通过动态生成K8S资源清单文件（deployment.yaml、service.yaml）.然后kubectl自动调用K8S资源部署.
+Helm本质就是让k8s的应用管理（Deployment、Service等）可配置,能动态生成.通过动态生成K8S资源清单文件（deployment.yaml、service.yaml）.然后kubectl自动调用K8S资源部署.
 
 > 说明: Helm3.x 版本已经不需要再安装tiller(之前老版本中的Helm仓库的服务端), 直接安装配置好仓库就可以使用了
 
@@ -61,7 +51,7 @@ NAME    URL
 apphub  https://apphub.aliyuncs.com
 ```
 
-## 3. Nginx-Ingress简单实例
+## 3. Helm部署 Nginx-Ingress-Controller
 
 ```shell
 # 切换到dev这个namespace下
@@ -323,7 +313,7 @@ nginx-ingress-nginx-ingress-controller-default-backend   ClusterIP      192.168.
 </html>
 ```
 
-下图显示了客户端是如果通过 Ingress Controller 连接到其中一个 Pod 的流程，客户端首先对 nginx.ingress.com 执行 DNS 解析，得到 Ingress Controller 所在节点的 IP，然后客户端向 Ingress Controller 发送 HTTP 请求，然后根据 Ingress 对象里面的描述匹配域名，找到对应的 Service 对象，并获取关联的 Endpoints 列表，将客户端的请求转发给其中一个 Pod.
+下图显示了客户端是如果通过 Ingress Controller 连接到其中一个 Pod 的流程,客户端首先对 `nginx.ingress.com` 执行 DNS 解析,得到 Ingress Controller 所在节点的 IP,然后客户端向 Ingress Controller 发送 HTTP 请求,然后根据 Ingress 对象里面的描述匹配域名,找到对应的 Service 对象,并获取关联的 Endpoints 列表,将客户端的请求转发给其中一个 Pod.
 
 ![20210111153621](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210111153621.png)
 
@@ -335,7 +325,6 @@ nginx-ingress-nginx-ingress-controller-default-backend   ClusterIP      192.168.
 
 ```shell
 [root@k8s-master ingress]# vi deploy-svc1.yaml
-spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -550,7 +539,7 @@ Hello MyApp | Version: v2 | <a href="hostname.html">Pod Name</a>
 
 #### 4.3.1. 本地Windows系统下浏览器访问http
 
-编辑文件 C:\WINDOWS\System32\drivers\etc\hosts
+编辑文件 `C:\WINDOWS\System32\drivers\etc\hosts`
 
 > 如果提示没有权限, 在文件属性里给User用户(当前所用用户)赋权即可编辑写入
 
@@ -756,7 +745,7 @@ nginx-https         <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.
 
 #### 4.5.3. 浏览器访问auth
 
-编辑文件 C:\WINDOWS\System32\drivers\etc\hosts
+编辑文件 `C:\WINDOWS\System32\drivers\etc\hosts`
 
 添加信息如下(在后面添加auth.nginx-ingress.com即可):
 
@@ -775,13 +764,13 @@ nginx-https         <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.
 
 重写可以使用以下注解控制:
 
-| 名称                                           | 描述                                                           | 值     |
-| ---------------------------------------------- | -------------------------------------------------------------- | ------ |
-| nginx.ingress.kubernetes.io/rewrite-target     | 必须重定向的目标URL                                            | String |
-| nginx.ingress.kubernetes.io/ssl-redirect       | 指示位置部分是否只能由SSL访问(当Ingress包含证书时，默认为True) | Bool   |
-| nginx.ingress.kubernetes.io/force-ssl-redirect | 即使Ingress没有启用TLS，也强制重定向到HTTPS                    | Bool   |
-| nginx.ingress.kubernetes.io/app-root           | 定义应用程序根目录，Controller在“/”上下文中必须重定向该根目录  | String |
-| nginx.ingress.kubernetes.io/use-regex          | 指示Ingress上定义的路径是否使用正则表达式                      | Bool   |
+| 名称                                           | 描述                                                          | 值     |
+| ---------------------------------------------- | ------------------------------------------------------------- | ------ |
+| nginx.ingress.kubernetes.io/rewrite-target     | 必须重定向的目标URL                                           | String |
+| nginx.ingress.kubernetes.io/ssl-redirect       | 指示位置部分是否只能由SSL访问(当Ingress包含证书时,默认为True) | Bool   |
+| nginx.ingress.kubernetes.io/force-ssl-redirect | 即使Ingress没有启用TLS,也强制重定向到HTTPS                    | Bool   |
+| nginx.ingress.kubernetes.io/app-root           | 定义应用程序根目录,Controller在“/”上下文中必须重定向该根目录  | String |
+| nginx.ingress.kubernetes.io/use-regex          | 指示Ingress上定义的路径是否使用正则表达式                     | Bool   |
 
 ```shell
 # 创建rewrite=ingress
@@ -814,7 +803,7 @@ rewrite             <none>   rewrite.nginx-ingress.com                          
 
 #### 4.6.1. 浏览器访问rewrite
 
-编辑文件 C:\WINDOWS\System32\drivers\etc\hosts
+编辑文件 `C:\WINDOWS\System32\drivers\etc\hosts`
 
 添加信息如下(在后面添加rewrite.nginx-ingress.com即可):
 
