@@ -4,9 +4,9 @@
 
 Ingress 是对集群中服务的外部访问进行管理的 API 对象,典型的访问方式是 HTTP和HTTPS.
 
-Ingress 可以提供负载均衡、SSL 和基于名称的虚拟托管.
+Ingress 可以提供负载均衡、SSL 和基于名称的虚拟托管.通过Ingress Controller实现Pod的负载均衡, 与只支持4层的Service不同, Ingress支持TCP/UDP 4层和HTTP 7层.使用场景比Service要广泛.
 
-必须具有 ingress 控制器[例如 ingress-nginx]才能满足 Ingress 的要求.仅创建 Ingress 资源无效.
+> 说明:必须具有 Ingress 控制器[例如 Nginx-Ingress-Controller]才能满足 Ingress 的要求.仅创建 Ingress 资源无效.
 
 ## 1. Ingress原理
 
@@ -18,11 +18,9 @@ Ingress 公开了从集群外部到集群内 services 的 HTTP 和 HTTPS 路由.
 
 Ingress 不会公开任意端口或协议.若将 HTTP 和 HTTPS 以外的服务公开到 Internet 时,通常使用 Service.Type=NodePort 或者 Service.Type=LoadBalancer 类型的服务.
 
-Nginx Ingress架构示意图:
+本实验Nginx Ingress架构示意图:
 
-![Ingress-Nginx](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/Ingress-Nginx.jpg)
-
-> 必须具有 Ingress 控制器 才能满足 Ingress 的要求。 仅创建 Ingress 资源本身没有任何效果。
+![Ingress-Nginx架构图](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/Ingress-Nginx架构图.jpg)
 
 ## 2. 部署Helm 3.4
 
