@@ -878,7 +878,7 @@ v1的模板可能是大家平时见到最多的也是最简单的,v1版本的HPA
 
 HPA不能使用复制控制器的直接操作进行滚动更新,即不能将HPA绑定到复制控制器并进行滚动更新(例如,使用Kubectl滚动更新).这不起作用的原因是,当滚动更新创建新的复制控制器时,HPA将不会绑定到新的复制控制器.
 
-#### 2.7.4. HPA怎么来使用
+#### 2.7.4. HPA怎么使用
 
 1.使用kubectl的方式
 
@@ -903,3 +903,113 @@ spec:
   maxReplicas: 10
   targetCPUUtilizationPercentage: 50
 ```
+
+#### 2.7.5 示例
+
+下载国内示例镜像
+
+```shell
+# 在集群所有节点都需要执行[主要是node节点]
+docker pull registry.cn-beijing.aliyuncs.com/google_registry/hpa-example
+```
+
+```shell
+# yaml
+[root@k8s-master monitor]# cat php-apache.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-apache
+spec:
+  selector:
+    matchLabels:
+      hpa: php-apache
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        hpa: php-apache
+    spec:
+      containers:
+      - name: php-apache
+        image: registry.cn-beijing.aliyuncs.com/google_registry/hpa-example
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 500m
+          requests:
+            cpu: 200m
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-apache
+  labels:
+    hpa: php-apache
+spec:
+  ports:
+  - port: 80
+  selector:
+    hpa: php-apache
+# 启动
+[root@k8s-master monitor]# kubectl apply -f php-apache.yaml 
+deployment.apps/php-apache created
+service/php-apache created
+# 查看
+[root@k8s-master monitor]# kubectl get svc,deploy,po | grep php
+service/php-apache                                               ClusterIP      192.168.160.106   <none>          80/TCP                       108s
+deployment.apps/php-apache                                               1/1     1            1           3m31s
+pod/php-apache-544bfd4f54-77rb6                                       1/1     Running   0          3m31s
+# 创建HPA
+# 当pod中CPU使用率达50%就扩容.最小1个,最大10个
+[root@k8s-master monitor]# kubectl autoscale deploy php-apache --cpu-percent=50 --min=1 --max=10
+horizontalpodautoscaler.autoscaling/php-apache autoscaled
+[root@k8s-master monitor]# kubectl get hpa
+NAME         REFERENCE               TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   <unknown>/50%   1         10        0          12s
+```
+
+压测php-apache
+
+```shell
+# 创建压测Pod并进入, 先不要退出
+[root@k8s-master monitor]# kubectl run -i --tty load-test --image=busybox /bin/sh
+/ # 
+# 另起一窗口可查看到pod在运行
+[root@k8s-master ~]# kubectl get po | grep load
+load-test                                                         1/1     Running   0          89s
+# 在load-test继续中操作
+/ # while true; do wget -q -O- http://php-apache.dev.svc.cluster.local; done
+OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!Session ended., resume using 'kubectl attach load-test -c load-test -i -t' command when the pod is running
+# 负载飙升, 副本数增多
+[root@k8s-master ~]# kubectl get hpa
+NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   250%/50%   1         10        5          11m
+# 自动扩容
+[root@k8s-master ~]# kubectl get po | grep php
+php-apache-544bfd4f54-77rb6                                       1/1     Running   0          20m
+php-apache-544bfd4f54-hvh96                                       1/1     Running   0          5m10s
+php-apache-544bfd4f54-nqrcz                                       1/1     Running   0          4m54s
+php-apache-544bfd4f54-qr48z                                       1/1     Running   0          5m10s
+php-apache-544bfd4f54-xzpbq                                       1/1     Running   0          5m10s
+
+# 停止压测后负载降下来
+[root@k8s-master ~]# kubectl get hpa
+NAME         REFERENCE               TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/50%    1         10        5          15m
+[root@k8s-master ~]# kubectl get deploy php-apache
+NAME         READY   UP-TO-DATE   AVAILABLE   AGE
+php-apache   5/5     5            5           16m
+
+# 再过几分钟发现负载降下来并且副本数也降了
+[root@k8s-master ~]# kubectl get po | grep php
+php-apache-544bfd4f54-77rb6                                       1/1     Running   0          22m
+[root@k8s-master ~]# kubectl get deploy php-apache
+NAME         READY   UP-TO-DATE   AVAILABLE   AGE
+php-apache   1/1     1            1           22m
+[root@k8s-master ~]# kubectl get hpa
+NAME         REFERENCE               TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/50%    1         10        1          18m
+```
+
+> 说明:停止压测，pod数量也不会立即降下来.而是过段时间后才会慢慢降下来.这是为了防止由于网络原因或者间歇性流量突增、突降，导致pod回收太快后面流量上来后Pod数量不够.
