@@ -6,13 +6,13 @@ HELM官网: <https://helm.sh/zh/> 本文部署`Helm V3`最新版本, V3和V2版�
 
 单纯在Kubernetes中部署应用, 我们需要依次部署Deployment/Service等, 步骤比较繁琐. HELM应用管理工具应运而生.
 
-Helm本质就是让k8s的应用管理（Deployment、Service等）可配置，能动态生成。通过动态生成K8S资源清单文件（deployment.yaml、service.yaml）。然后kubectl自动调用K8S资源部署。
+Helm本质就是让k8s的应用管理(Deployment、Service等)可配置,能动态生成.通过动态生成K8S资源清单文件(deployment.yaml、service.yaml).然后kubectl自动调用K8S资源部署.
 
-Helm负责管理Kubernetes应用--Helm Chart, 支持发布的版本管理和控制，很大程度上简化了Kubernetes应用的部署和管理, Chart易于创建/发布/分享,Helm和Chart的关系类似Yum和RPM的关系.
+Helm负责管理Kubernetes应用--Helm Chart, 支持发布的版本管理和控制,很大程度上简化了Kubernetes应用的部署和管理, Chart易于创建/发布/分享,Helm和Chart的关系类似Yum和RPM的关系.
 
 特点:
 
-- 复杂性管理: 即使是最复杂的应用，Charts 依然可以描述， 提供使用单点授权的可重复安装应用程序
+- 复杂性管理: 即使是最复杂的应用,Charts 依然可以描述, 提供使用单点授权的可重复安装应用程序
 - 易于升级: 随时随地升级和自定义Hooks消除升级的痛点
 - 分发简单: Charts 很容易在公共或私有化服务器上分发和部署
 - 支持回滚: 使用 helm rollback 可以轻松回滚到之前的发布版本

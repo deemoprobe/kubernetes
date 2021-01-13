@@ -20,7 +20,7 @@ Ingress 不会公开任意端口或协议.若将 HTTP 和 HTTPS 以外的服务�
 
 本实验Nginx Ingress架构示意图:
 
-![Ingress-Nginx架构图](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/Ingress-Nginx架构图.jpg)
+![Ingress-Nginx](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/Ingress-Nginx.jpg)
 
 ## 2. 部署Helm 3.4
 
