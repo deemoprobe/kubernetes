@@ -26,7 +26,7 @@ Ingress 不会公开任意端口或协议.若将 HTTP 和 HTTPS 以外的服务�
 
 helm通过打包的方式,支持发布的版本管理和控制,很大程度上简化了Kubernetes应用的部署和管理.
 
-Helm本质就是让k8s的应用管理（Deployment、Service等）可配置,能动态生成.通过动态生成K8S资源清单文件（deployment.yaml、service.yaml）.然后kubectl自动调用K8S资源部署.
+Helm本质就是让k8s的应用管理(Deployment、Service等)可配置,能动态生成.通过动态生成K8S资源清单文件(deployment.yaml、service.yaml).然后kubectl自动调用K8S资源部署.
 
 > 说明: Helm3.x 版本已经不需要再安装tiller(之前老版本中的Helm仓库的服务端), 直接安装配置好仓库就可以使用了
 
