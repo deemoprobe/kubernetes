@@ -66,5 +66,5 @@ apphub  https://apphub.aliyuncs.com
 stable  https://charts.helm.sh/stable
 
 # 可用下面命令删除仓库
-
+list-group.no-bg.no-borders.pull-in.m-b-none
 ```
