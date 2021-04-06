@@ -1,0 +1,4 @@
+FROM centos
+RUN yum install -y curl
+ENTRYPOINT [ "/bin/echo", "echo test" ]
+ONBUILD RUN echo "Father image onbuild running..."

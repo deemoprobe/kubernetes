@@ -106,18 +106,14 @@ docker run hello-world
 docker version
 
 # 配置阿里docker镜像加速器
-mkdir -p /etc/docker
-vi /etc/docker/daemon.json
 # {your_id} 根据自己申请的阿里镜像加速器id来配置
-{
-  "registry-mirror": ["https://{your_id}.mirror.aliyuncs.com"]
-}
 # docker文件驱动改成 systemd
-vim /etc/docker/daemon.json
+cat <<EOF > /etc/docker/daemon.json
 {
   "exec-opts": ["native.cgroupdriver=systemd"],
-  "registry-mirror": ["https://{your_id}.mirror.aliyuncs.com"]
+  "registry-mirror": ["https://ynirk4k5.mirror.aliyuncs.com"]
 }
+EOF
 
 # 重启docker
 systemctl restart docker
