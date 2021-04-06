@@ -106,7 +106,7 @@ docker run hello-world
 docker version
 
 # 配置阿里docker镜像加速器
-# {your_id} 根据自己申请的阿里镜像加速器id来配置
+# ["https://ynirk4k5.mirror.aliyuncs.com"]中"ynirk4k5"根据自己申请的阿里镜像加速器id来配置
 # docker文件驱动改成 systemd
 cat <<EOF > /etc/docker/daemon.json
 {
