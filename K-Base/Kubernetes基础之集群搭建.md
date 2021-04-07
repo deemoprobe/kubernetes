@@ -6,8 +6,8 @@
 
 ## 1. 环境说明
 
-- 虚拟化平台: VirtualBox 6.1.18 r142142 (Qt5.6.2)  
-- 操作系统: CentOS Linux release 7.9.2009 (Core)  
+- 虚拟化平台: VirtualBox 6.1.18
+- 操作系统: CentOS Linux release 7.9.2009
 - 操作用户: root
 - 电脑型号: Lenovo Yoga 14s 2021
 - CPU: AMD Ryzen 7 4800H (8c16t)
