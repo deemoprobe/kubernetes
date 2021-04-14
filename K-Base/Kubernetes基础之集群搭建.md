@@ -159,6 +159,7 @@ C:\Users\deemoprobe>ping 192.168.43.21
 
 - m1/m2/m3 集群的Master节点
 - s1/s2 集群的Node节点
+- vip: 192.168.43.20,是做高可用m1~3的虚拟IP,不占用物理资源
 
 | 主机节点名称 |      IP       | CPU核心数 | 内存大小 | 磁盘大小 |
 | :----------: | :-----------: | :-------: | :------: | :------: |
@@ -182,6 +183,7 @@ C:\Users\deemoprobe>ping 192.168.43.21
 # 以m1为例
 [root@m1 ~]# vi /etc/hosts
 ...
+192.168.43.20    vip
 192.168.43.21    m1
 192.168.43.22    m2
 192.168.43.23    m3
@@ -205,9 +207,12 @@ sed -i "s/=enforcing/=disabled/g" /etc/sysconfig/selinux
 iptables -F && iptables -X && iptables -F -t nat && iptables -X -t nat && iptables -P FORWARD ACCEPT
 ```
 
-### 3.5. 系统参数配置(ALL)
+### 3.5. 建议配置(ALL)
 
 ```shell
+# 更新yum源为阿里源
+curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo
+yum upgrade -y
 # 制作配置文件
 $ cat > /etc/sysctl.d/kubernetes.conf <<EOF
 net.bridge.bridge-nf-call-iptables=1
@@ -220,20 +225,43 @@ fs.inotify.max_user_watches=89100
 EOF
 # 生效文件
 $ sysctl -p /etc/sysctl.d/kubernetes.conf
+# 配置ntpdate,同步服务器时间
+rpm -ivh http://mirrors.wlnmp.com/centos/wlnmp-release-centos.noarch.rpm
+yum install ntpdate -y
+# 同步时区和时间
+ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+echo 'Asia/Shanghai' >/etc/timezone
+ntpdate time2.aliyun.com
+# 配置limits
+cat <<EOF >> /etc/security/limits.conf
+* soft nofile 655360
+* hard nofile 131072
+* soft nproc 655350
+* hard nproc 655350
+* soft memlock unlimited
+* hard memlock unlimited
+EOF
+# 配置免密登录, m1到其他节点
+ssh-keygen -t rsa
+for i in m1 m2 m3 s1 s2;do ssh-copy-id -i .ssh/id_rsa.pub $i;done
+# 安装常用工具包
+yum install wget jq psmisc vim net-tools telnet yum-utils device-mapper-persistent-data lvm2 git -y
 ```
 
 ### 3.6. 部署Docker(ALL)
 
 ```shell
 # 卸载已存在docker
-yum remove docker \
-            docker-client \
-            docker-client-latest \
-            docker-common \
-            docker-latest \
-            docker-latest-logrotate \
-            docker-logrotate \
-            docker-engine
+yum remove -y docker \
+              docker-client \
+              docker-client-latest \
+              docker-common \
+              docker-latest \
+              docker-latest-logrotate \
+              docker-logrotate \
+              docker-engine
+
+yum remove -y docker-ce docker-ce-cli containerd.io
 
 # 设置docker仓库
 yum install -y yum-utils
@@ -241,14 +269,14 @@ yum-config-manager \
   --add-repo \
   https://download.docker.com/linux/centos/docker-ce.repo
 
-# 安装docker-ce
+# 安装最新版本docker-ce
 yum install docker-ce docker-ce-cli containerd.io
 
 # 加入开机启动并启动
 systemctl enable docker
 systemctl start docker
 
-# 测试运行并查看版本信息
+# 测试运行hello-world镜像并查看docker版本信息
 docker run hello-world
 docker version
 
