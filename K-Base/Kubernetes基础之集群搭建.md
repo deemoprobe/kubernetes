@@ -6,7 +6,7 @@
 
 ## 1. 环境说明
 
-- 虚拟化平台: VirtualBox 6.1.18
+- 虚拟化平台: VMware® Workstation 16 Pro
 - 操作系统: CentOS Linux release 7.9.2009
 - 操作用户: root
 - 电脑型号: Lenovo Yoga 14s 2021
@@ -15,13 +15,13 @@
 
 ### 1.1. 安装虚拟机
 
-安装VirtualBox虚拟机,去[Oracle VirtualBox官网](https://www.virtualbox.org/wiki/Downloads)下载介质包,一路下一步安装即可.
+安装VMware® Workstation 16 Pro虚拟机,去[VMware官网](https://www.vmware.com/products/workstation-pro/workstation-pro-evaluation.html)下载对应系统的16 pro介质包,一路下一步安装即可, 不激活可使用30天, 激活码网上可以搜到.
 
 ### 1.2. 安装CentOS
 
 准备好CentOS7的镜像文件,去[清华大学开源软件镜像站](https://mirror.tuna.tsinghua.edu.cn/)搜索"centos"下载想要的版本即可.
 
-VirtualBox虚拟机安装CentOS系统网上一大堆,自行搜索安装即可.如果对Linux比较熟悉,安装时选择"Minimal Install"即可,后面需要什么工具针对性安装即可,桌面版操作简单(适合新手)但很多功能用不到,实在没必要把资源浪费在不必要的地方.
+VMware虚拟机安装CentOS系统网上一大堆,自行搜索安装即可.如果对Linux比较熟悉,安装时选择"Minimal Install"即可,后面需要什么工具针对性安装即可,桌面版操作简单(适合新手)但很多功能用不到,实在没必要把资源浪费在不必要的地方.
 
 ### 1.3. 配置静态IP
 
@@ -46,33 +46,27 @@ C:\Users\deemoprobe>ipconfig
 ...
 ```
 
-#### 1.3.2. VirtualBox设置
+#### 1.3.2. VMware设置
 
-选中对应的虚拟机,设置->网络,启用网卡1和网卡2
+VMware Workstation菜单栏编辑->虚拟网络编辑器->更改设置(右下角),桥接模式,选择自己的网卡
 
-网卡1使用默认的"网络地址转换(NAT)"模式
-
-![20210406163342](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210406163342.png)
-
-网卡2使用"桥接网卡"模式,选择你在使用的网卡
-
-![20210406163436](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210406163436.png)
+![20210416153000](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210416153000.png)
 
 #### 1.3.3. 静态IP配置
 
 进入虚拟机,编辑网络配置文件,主要注意网关和IP段和之前查的Windows本地下相同网段即可
 
 ```shell
-# 以m1为例,找到ifcfg-en开头的网络配置文件即可
-[root@m1 network-scripts]# pwd
+# 以k8s-master01为例,找到ifcfg-en开头的网络配置文件即可
+[root@k8s-master01 network-scripts]# pwd
 /etc/sysconfig/network-scripts
-[root@m1 network-scripts]# ls
+[root@k8s-master01 network-scripts]# ls
 ifcfg-enp0s3  ifdown-bnep  ifdown-isdn    ifdown-sit       ifup          ifup-ippp  ifup-plusb   ifup-sit       ifup-wireless
 ifcfg-enp0s8  ifdown-eth   ifdown-post    ifdown-Team      ifup-aliases  ifup-ipv6  ifup-post    ifup-Team      init.ipv6-global
 ifcfg-lo      ifdown-ippp  ifdown-ppp     ifdown-TeamPort  ifup-bnep     ifup-isdn  ifup-ppp     ifup-TeamPort  network-functions
 ifdown        ifdown-ipv6  ifdown-routes  ifdown-tunnel    ifup-eth      ifup-plip  ifup-routes  ifup-tunnel    network-functions-ipv6
 # 网卡1配置文件ifcfg-enp0s3 不需要改什么,查看一下即可
-[root@m1 network-scripts]# cat ifcfg-enp0s3 
+[root@k8s-master01 network-scripts]# cat ifcfg-enp0s3 
 TYPE="Ethernet"
 PROXY_METHOD="none"
 BROWSER_ONLY="no"
@@ -89,7 +83,7 @@ UUID="d7d6337d-ee3d-4313-b596-447cf67011f8"
 DEVICE="enp0s3"
 ONBOOT="yes"
 # 主要修改网卡2的配置文件 我这里是ifcfg-enp0s8,参考我的配置文件
-[root@m1 network-scripts]# cat ifcfg-enp0s8
+[root@k8s-master01 network-scripts]# cat ifcfg-enp0s8
 TYPE=Ethernet
 PROXY_METHOD=none
 BROWSER_ONLY=no
@@ -112,11 +106,11 @@ GATEWAY=192.168.43.1
 IPV6_PRIVACY=no
 
 # 修改后重启网络服务
-[root@m1 network-scripts]# systemctl restart network
+[root@k8s-master01 network-scripts]# systemctl restart network
 
 # 如果重启后没有生效,可以尝试给网卡2的网络配置文件重新申请一个UUID
 # 生成后将下面的UUID配置到ifcfg-enp0s8,重启网络服务
-[root@m1 network-scripts]# uuidgen
+[root@k8s-master01 network-scripts]# uuidgen
 af9d7267-df0f-468d-a7a5-657efd623829
 ```
 
@@ -124,7 +118,7 @@ af9d7267-df0f-468d-a7a5-657efd623829
 
 ```shell
 # 1.虚拟机访问外网
-[root@m1 network-scripts]# ping baidu.com
+[root@k8s-master01 network-scripts]# ping baidu.com
 PING baidu.com (39.156.69.79) 56(84) bytes of data.
 64 bytes from 39.156.69.79 (39.156.69.79): icmp_seq=1 ttl=48 time=49.0 ms
 64 bytes from 39.156.69.79 (39.156.69.79): icmp_seq=2 ttl=48 time=88.8 ms
@@ -157,38 +151,38 @@ C:\Users\deemoprobe>ping 192.168.43.21
 
 本次实验采用3主2从的高可用Kubernetes集群模式:
 
-- m1/m2/m3 集群的Master节点
-- s1/s2 集群的Node节点
-- vip: 192.168.43.20,是做高可用m1~3的虚拟IP,不占用物理资源
+- k8s-master01/k8s-master02/k8s-master03 集群的Master节点
+- k8s-node01/k8s-node02 集群的Node节点
+- k8s-master-vip: 192.168.43.20,是做高可用k8s-master01~3的虚拟IP,不占用物理资源
 
 | 主机节点名称 |      IP       | CPU核心数 | 内存大小 | 磁盘大小 |
 | :----------: | :-----------: | :-------: | :------: | :------: |
-|      m1      | 192.168.43.21 |     2     |    3G    |   40G    |
-|      m2      | 192.168.43.22 |     2     |    3G    |   40G    |
-|      m3      | 192.168.43.23 |     2     |    3G    |   40G    |
-|      s1      | 192.168.43.24 |     2     |    3G    |   40G    |
-|      s2      | 192.168.43.25 |     2     |    3G    |   40G    |
+| k8s-master01 | 192.168.43.21 |     2     |    3G    |   40G    |
+| k8s-master02 | 192.168.43.22 |     2     |    3G    |   40G    |
+| k8s-master03 | 192.168.43.23 |     2     |    3G    |   40G    |
+|  k8s-node01  | 192.168.43.24 |     2     |    3G    |   40G    |
+|  k8s-node02  | 192.168.43.25 |     2     |    3G    |   40G    |
 
 ## 3. 操作步骤
 
 - ALL 所有节点都要执行
-- Master 只需要在master节点(m1/m2/m3)执行
-- Node 只需要在node节点(s1/s2)执行
+- Master 只需要在master节点(k8s-master01/k8s-master02/k8s-master03)执行
+- Node 只需要在node节点(k8s-node01/k8s-node02)执行
 
 如果**最后三步**安装过程中有报错, 先根据报错信息尝试解决, 无法解决时, 可以`kubeadm reset --force`重置集群重新配置
 
 ### 3.4. 添加主机信息(ALL)
 
 ```shell
-# 以m1为例
-[root@m1 ~]# vi /etc/hosts
+# 以k8s-master01为例
+[root@k8s-master01 ~]# vi /etc/hosts
 ...
-192.168.43.20    vip
-192.168.43.21    m1
-192.168.43.22    m2
-192.168.43.23    m3
-192.168.43.24    s1
-192.168.43.25    s2
+192.168.43.20    k8s-master-vip
+192.168.43.21    k8s-master01
+192.168.43.22    k8s-master02
+192.168.43.23    k8s-master03
+192.168.43.24    k8s-node01
+192.168.43.25    k8s-node02
 ```
 
 ### 3.1. 关闭防火墙/swap/SELinux/重置iptables(ALL)
@@ -212,7 +206,25 @@ iptables -F && iptables -X && iptables -F -t nat && iptables -X -t nat && iptabl
 ```shell
 # 更新yum源为阿里源
 curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo
+sed -i -e '/mirrors.cloud.aliyuncs.com/d' -e '/mirrors.aliyuncs.com/d' /etc/yum.repos.d/CentOS-Base.repo
+
+# 升级内核
+cd /root
+wget http://193.49.22.109/elrepo/kernel/el7/x86_64/RPMS/kernel-ml-devel-4.19.12-1.el7.elrepo.x86_64.rpm
+wget http://193.49.22.109/elrepo/kernel/el7/x86_64/RPMS/kernel-ml-4.19.12-1.el7.elrepo.x86_64.rpm
+# 所有节点安装内核
+cd /root && yum localinstall -y kernel-ml*
+# 所有节点更改内核启动顺序
+grub2-set-default  0 && grub2-mkconfig -o /etc/grub2.cfg
+grubby --args="user_namespace.enable=1" --update-kernel="$(grubby --default-kernel)"
+# 检查默认内核是不是4.19
+grubby --default-kernel
+# 所有节点重启，然后检查内核是不是4.19
+uname -a
+
+# 升级系统软件包
 yum upgrade -y
+
 # 制作配置文件
 $ cat > /etc/sysctl.d/kubernetes.conf <<EOF
 net.bridge.bridge-nf-call-iptables=1
@@ -225,6 +237,7 @@ fs.inotify.max_user_watches=89100
 EOF
 # 生效文件
 $ sysctl -p /etc/sysctl.d/kubernetes.conf
+
 # 配置ntpdate,同步服务器时间
 rpm -ivh http://mirrors.wlnmp.com/centos/wlnmp-release-centos.noarch.rpm
 yum install ntpdate -y
@@ -232,6 +245,7 @@ yum install ntpdate -y
 ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 echo 'Asia/Shanghai' >/etc/timezone
 ntpdate time2.aliyun.com
+
 # 配置limits
 cat <<EOF >> /etc/security/limits.conf
 * soft nofile 655360
@@ -241,11 +255,13 @@ cat <<EOF >> /etc/security/limits.conf
 * soft memlock unlimited
 * hard memlock unlimited
 EOF
-# 配置免密登录, m1到其他节点
+
+# 配置免密登录, k8s-master01到其他节点
 ssh-keygen -t rsa
-for i in m1 m2 m3 s1 s2;do ssh-copy-id -i .ssh/id_rsa.pub $i;done
+for i in k8s-master01 k8s-master02 k8s-master03 k8s-node01 k8s-node02;do ssh-copy-id -i .ssh/id_rsa.pub $i;done
+
 # 安装常用工具包
-yum install wget jq psmisc vim net-tools telnet yum-utils device-mapper-persistent-data lvm2 git -y
+yum install wget jq psmisc vim net-tools telnet yum-utils device-mapper-persistent-data lvk8s-master02 git -y
 ```
 
 ### 3.6. 部署Docker(ALL)
@@ -270,7 +286,7 @@ yum-config-manager \
   https://download.docker.com/linux/centos/docker-ce.repo
 
 # 安装最新版本docker-ce
-yum install docker-ce docker-ce-cli containerd.io
+yum install docker-ce docker-ce-cli containerd.io -y
 
 # 加入开机启动并启动
 systemctl enable docker
@@ -411,8 +427,8 @@ master节点执行
 kubectl get nodes
 NAME         STATUS   ROLES    AGE     VERSION
 k8s-master   Ready    master   52m     v1.19.3
-k8s-node1    Ready    <none>   2m29s   v1.19.3
-k8s-node2    Ready    <none>   2m3s    v1.19.3
+k8s-node1    Ready    <none>   2k8s-master029s   v1.19.3
+k8s-node2    Ready    <none>   2k8s-master03s    v1.19.3
 
 # 增加node节点的节点role名称
 kubectl label nodes k8s-node1 node-role.kubernetes.io/node=
@@ -424,7 +440,7 @@ kubectl get nodes
 NAME         STATUS   ROLES    AGE     VERSION
 k8s-master   Ready    master   54m     v1.19.3
 k8s-node1    Ready     node    4m57s   v1.19.3
-k8s-node2    Ready     node    4m31s    v1.19.3
+k8s-node2    Ready     node    4k8s-master031s    v1.19.3
 
 # 测试namespace
 kubectl get namespace
@@ -437,11 +453,11 @@ kubectl create deployment nginx --image=nginx
 kubectl expose deployment nginx --port=80 --type=NodePort
 kubectl get pod,svc
 NAME                        READY   STATUS    RESTARTS   AGE
-pod/nginx-f89759699-9265g   1/1     Running   0          5m30s
+pod/nginx-f89759699-9265g   1/1     Running   0          5k8s-master030s
 
 NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
 service/kubernetes   ClusterIP    x.x.x.x         <none>      443/TCP        12m
-service/nginx        NodePort     x.x.x.x         <none>      80:30086/TCP   1m15s
+service/nginx        NodePort     x.x.x.x         <none>      80:30086/TCP   1k8s-master015s
 
 ```
 
