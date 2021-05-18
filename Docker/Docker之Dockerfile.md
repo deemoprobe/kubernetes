@@ -1,7 +1,16 @@
 # Docker之Dockerfile
 
-Dockerfile构建流程：编写-构建-执行
-
-- 按照规范手动编写Dockerfile文件
-- docker build 执行该文件生成一个镜像
-- docker run 创建并进入容器
+```shell
+FROM base_image[基础镜像,该文件创建新镜像所依赖的镜像]
+MAINTAINER user_name and user_email[作者姓名和邮件]
+RUN command[镜像构建时运行的命令]
+EXPOSE port[容器对外暴露的端口]
+WORKDIR work_directory[进入容器默认进入的目录]
+ENV set_env[创建环境变量]
+ADD [文件拷贝进镜像并解压]
+COPY [文件拷贝进镜像]
+VOLUME [容器数据卷,用于数据保存和持久化]
+CMD [容器启动时要运行的命令,可以设置多个CMD,但最后一个生效,前面的不生效,也会被docker run启动容器时后面加的命令替换]
+ENTYPOINT [容器启动时要运行的命令,多个命令依次执行]
+ONBUILD [当构建一个被继承的Dockerfile时运行命令]
+```
