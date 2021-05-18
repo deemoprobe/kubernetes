@@ -1,32 +1,88 @@
 # Docker之常用命令
 
-## 1. 基础
+## 1. RTFM
 
 ```shell
-# 查看docker版本
-docker version
+Usage:  docker [OPTIONS] COMMAND
 
-# 查看docker系统信息
-docker info
+A self-sufficient runtime for containers
 
-# 查看正在运行的容器 （-a参数获取包括已停止的所有容器）
-docker ps
+Options:
+      --config string      Location of client config files (default "/root/.docker")
+  -c, --context string     Name of the context to use to connect to the daemon (overrides DOCKER_HOST env var and default context set with "docker
+                           context use")
+  -D, --debug              Enable debug mode
+  -H, --host list          Daemon socket(s) to connect to
+  -l, --log-level string   Set the logging level ("debug"|"info"|"warn"|"error"|"fatal") (default "info")
+      --tls                Use TLS; implied by --tlsverify
+      --tlscacert string   Trust certs signed only by this CA (default "/root/.docker/ca.pem")
+      --tlscert string     Path to TLS certificate file (default "/root/.docker/cert.pem")
+      --tlskey string      Path to TLS key file (default "/root/.docker/key.pem")
+      --tlsverify          Use TLS and verify the remote
+  -v, --version            Print version information and quit
 
-# 实时监控容器的运行情况
-docker stats
+Management Commands:
+  app*        Docker App (Docker Inc., v0.9.1-beta3)
+  builder     Manage builds
+  buildx*     Build with BuildKit (Docker Inc., v0.5.1-docker)
+  config      Manage Docker configs
+  container   Manage containers
+  context     Manage contexts
+  image       Manage images
+  manifest    Manage Docker image manifests and manifest lists
+  network     Manage networks
+  node        Manage Swarm nodes
+  plugin      Manage plugins
+  scan*       Docker Scan (Docker Inc.)
+  secret      Manage Docker secrets
+  service     Manage services
+  stack       Manage Docker stacks
+  swarm       Manage Swarm
+  system      Manage Docker
+  trust       Manage trust on Docker images
+  volume      Manage volumes
 
-# 查看容器或镜像的底层信息
-docker inspect ID
-
-# 查看容器中进程情况
-docker top ID
-
-# 查看容器中进程的日志
-docker logs ID
-
-# 进入某个容器系统
-docker exec -it ID bash
-
+Commands:
+  attach      Attach local standard input, output, and error streams to a running container
+  build       Build an image from a Dockerfile
+  commit      Create a new image from a container's changes
+  cp          Copy files/folders between a container and the local filesystem
+  create      Create a new container
+  diff        Inspect changes to files or directories on a container's filesystem
+  events      Get real time events from the server
+  exec        Run a command in a running container
+  export      Export a container's filesystem as a tar archive
+  history     Show the history of an image
+  images      List images
+  import      Import the contents from a tarball to create a filesystem image
+  info        Display system-wide information
+  inspect     Return low-level information on Docker objects
+  kill        Kill one or more running containers
+  load        Load an image from a tar archive or STDIN
+  login       Log in to a Docker registry
+  logout      Log out from a Docker registry
+  logs        Fetch the logs of a container
+  pause       Pause all processes within one or more containers
+  port        List port mappings or a specific mapping for the container
+  ps          List containers
+  pull        Pull an image or a repository from a registry
+  push        Push an image or a repository to a registry
+  rename      Rename a container
+  restart     Restart one or more containers
+  rm          Remove one or more containers
+  rmi         Remove one or more images
+  run         Run a command in a new container
+  save        Save one or more images to a tar archive (streamed to STDOUT by default)
+  search      Search the Docker Hub for images
+  start       Start one or more stopped containers
+  stats       Display a live stream of container(s) resource usage statistics
+  stop        Stop one or more running containers
+  tag         Create a tag TARGET_IMAGE that refers to SOURCE_IMAGE
+  top         Display the running processes of a container
+  unpause     Unpause all processes within one or more containers
+  update      Update configuration of one or more containers
+  version     Show the Docker version information
+  wait        Block until one or more containers stop, then print their exit codes
 ```
 
 ## 2. 镜像命令
@@ -38,6 +94,18 @@ docker exec -it ID bash
 - SIZE: 镜像大小
 
 ### 2.1. docker image
+
+Usage:  docker images [OPTIONS] [REPOSITORY[:TAG]]
+
+List images
+
+Options:
+  -a, --all             Show all images (default hides intermediate images)
+      --digests         Show digests
+  -f, --filter filter   Filter output based on conditions provided
+      --format string   Pretty-print images using a Go template
+      --no-trunc        Don't truncate output
+  -q, --quiet           Only show image IDs
 
 ```shell
 # 查看镜像
@@ -52,17 +120,37 @@ docker images -qa
 
 ### 2.2. docker search
 
+Usage:  docker search [OPTIONS] [IMAGE]
+
+Search the Docker Hub for images
+
+Options:
+  -f, --filter filter   Filter output based on conditions provided
+      --format string   Pretty-print search using a Go template
+      --limit int       Max number of search results (default 25)
+      --no-trunc        Don't truncate output
+
 ```shell
 # 从Docker Hub上查询已存在镜像
 docker search IMAGE
-# 根据热度(stars)获取stars数在10以上的IMAGE(目前已弃用)
-docker search -s 10 IMAGE
 # 根据stars数目来搜索IMAGE
 # 查看15星以上的镜像
-docker search --filter=stars=15 IMAGE
+docker search -f=stars=15 IMAGE
+# 搜索100星以上的nginx镜像，并且不切割摘要信息（摘要全部显示）
+docker search --no-trunc -f=stars=100 nginx
 ```
 
 ### 2.3. docker pull
+
+Usage:  docker pull [OPTIONS] NAME[:TAG|@DIGEST]
+
+Pull an image or a repository from a registry
+
+Options:
+  -a, --all-tags                Download all tagged images in the repository
+      --disable-content-trust   Skip image verification (default true)
+      --platform string         Set platform if server is multi-platform capable
+  -q, --quiet                   Suppress verbose output
 
 ```shell
 # 从配置好的仓库拉取镜像, 未配置的话默认从Docker Hub上获取
@@ -72,6 +160,14 @@ docker pull IMAGE:TAG
 ```
 
 ### 2.4. docker rmi
+
+Usage:  docker rmi [OPTIONS] IMAGE [IMAGE...]
+
+Remove one or more images
+
+Options:
+  -f, --force      Force removal of the image
+      --no-prune   Do not delete untagged parents
 
 ```shell
 # 删除最新版本镜像
@@ -101,7 +197,7 @@ Deleted: sha256:bf756fb1ae65adf866bd8c456593cd24beb6a0a061dedf42b26a993176745f6b
 
 ### 3.1. docker run
 
-docker run [OPTIONS] IMAGE_ID [COMAND] [ARG...]
+docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
 
 OPTIONS字段说明:
 
@@ -143,7 +239,7 @@ CONTAINER ID        IMAGE                                               COMMAND 
 CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                   NAMES
 144718cdeaa8        nginx:1.18.0        "/docker-entrypoint.…"   13 seconds ago      Up 12 seconds       0.0.0.0:32768->80/tcp   thirsty_maxwell
 # 指定端口映射
-[root@docker ~]# docker run -it -p 8080:80 nginx:1.18.0
+[root@docker ~]# docker run -it --name=nginx-test -p 8080:80 nginx:1.18.0
 /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
 /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
 /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
@@ -151,10 +247,10 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 10-listen-on-ipv6-by-default.sh: Enabled listen on IPv6 in /etc/nginx/conf.d/default.conf
 /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
 /docker-entrypoint.sh: Configuration complete; ready for start up
-# 查看分配的端口
+# 另起一个terminal查看容器信息
 [root@docker ~]# docker ps
-CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                  NAMES
-4f75469bc394        nginx:1.18.0        "/docker-entrypoint.…"   19 seconds ago      Up 19 seconds       0.0.0.0:8080->80/tcp   stoic_lamarr
+CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS         PORTS                  NAMES
+58485cdda934   nginx:1.18.0   "/docker-entrypoint.…"   10 seconds ago   Up 9 seconds   0.0.0.0:8080->80/tcp   nginx-test
 # 访问nginx
 [root@docker ~]# curl localhost:8080
 ...
@@ -167,21 +263,44 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 
 ### 3.2. docker ps
 
-docker ps [OPTIONS]
+Usage:  docker ps [OPTIONS]
 
-OPTIONS字段说明:
+List containers
 
-- -a 列出所有正在运行的容器和历史上运行过的容器
-- -l 显示最近运行过的容器
-- -n [num] 显示最近创建的num个容器
-- -q 显示正在运行容器的ID
+Options:
+  -a, --all             Show all containers (default shows just running)
+  -f, --filter filter   Filter output based on conditions provided
+      --format string   Pretty-print containers using a Go template
+  -n, --last int        Show n last created containers (includes all states) (default -1)
+  -l, --latest          Show the latest created container (includes all states)
+      --no-trunc        Don't truncate output
+  -q, --quiet           Only display container IDs
+  -s, --size            Display total file sizes
 
-### 3.3. 退出容器
+```shell
+# 查看所有容器（包括已停止的）ID
+[root@docker ~]# docker ps -qa
+58485cdda934
+38ddd005e21c
+1827aed9779f
+# 查看最近使用的两个容器
+[root@docker ~]# docker ps -n 2
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS                     PORTS     NAMES
+58485cdda934   nginx:1.18.0   "/docker-entrypoint.…"   4 minutes ago   Exited (0) 3 minutes ago             nginx-test
+38ddd005e21c   busybox        "sh"                     7 days ago      Exited (0) 7 days ago                busybox
+# 查看最近一次启动的容器
+[root@docker ~]# docker ps -l
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS                     PORTS     NAMES
+58485cdda934   nginx:1.18.0   "/docker-entrypoint.…"   5 minutes ago   Exited (0) 3 minutes ago             nginx-test
+# 查看所有容器的大小
+[root@docker ~]# docker ps -a -s
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS                     PORTS     NAMES          SIZE
+58485cdda934   nginx:1.18.0   "/docker-entrypoint.…"   6 minutes ago   Exited (0) 5 minutes ago             nginx-test     1.11kB (virtual 133MB)
+38ddd005e21c   busybox        "sh"                     7 days ago      Exited (0) 7 days ago                busybox        29B (virtual 1.24MB)
+1827aed9779f   hello-world    "/hello"                 7 days ago      Exited (0) 7 days ago                quirky_raman   0B (virtual 13.3kB)
+```
 
-- exit 退出并关闭容器(适用于docker run命令启动的容器, docker exec 进入容器exit退出后不影响容器状态)
-- Ctrl+P+Q 退出但不关闭容器(适用于docker run命令启动的容器)
-
-### 3.4. 容器启停
+### 3.3. 容器启停
 
 ```shell
 # 启动已停止的容器
@@ -194,7 +313,7 @@ docker stop 容器名或ID
 docker kill 容器名或ID
 ```
 
-### 3.5. 删除容器
+### 3.4. 删除容器
 
 ```shell
 # 删除已停止容器
@@ -202,19 +321,60 @@ docker rm 容器名或ID
 # 强制删除(若在运行,也会强制停止后删除)
 docker rm -f 容器名或ID
 # 删除全部容器
-docker rm -f $(docker ps -a -q)
+docker rm -f $(docker ps -qa)
 or
-docker ps -a -q | xargs docker rm
+docker ps -qa | xargs docker rm
 ```
 
-### 3.6. 进入正在运行的容器
+### 3.5. 进入正在运行的容器
+
+Usage:  docker exec [OPTIONS] CONTAINER COMMAND [ARG...]
+
+Run a command in a running container
+
+Options:
+  -d, --detach               Detached mode: run command in the background
+      --detach-keys string   Override the key sequence for detaching a container
+  -e, --env list             Set environment variables
+      --env-file list        Read in a file of environment variables
+  -i, --interactive          Keep STDIN open even if not attached
+      --privileged           Give extended privileges to the command
+  -t, --tty                  Allocate a pseudo-TTY
+  -u, --user string          Username or UID (format: <name|uid>[:<group|gid>])
+  -w, --workdir string       Working directory inside the container
 
 ```shell
-# 进入正在运行的容器并交互
+# 进入正在运行的容器并启用交互
 docker exec -it 容器ID /bin/bash
 # 不进入正在运行的容器直接交互,比如查看根目录
 docker exec -it 容器ID ls -al /
 exit # 退出
+```
+
+### 3.6. 退出容器
+
+- exit（等价于Ctrl+D） 退出并关闭容器(适用于docker run命令启动的容器, docker exec 进入容器exit退出后不影响容器状态)
+- Ctrl+P+Q 退出但不关闭容器(适用于docker run命令启动的容器)
+
+```shell
+# docker run启动容器
+[root@docker ~]# docker run -it nginx:1.18.0 bash
+root@888ff1b7371e:/# 
+# 另起一个terminal查看容器
+[root@docker ~]# docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS     NAMES
+888ff1b7371e   nginx:1.18.0   "/docker-entrypoint.…"   6 seconds ago   Up 5 seconds   80/tcp    hopeful_brahmagupta
+# 退出方式1：exit(Ctrl+D)
+root@888ff1b7371e:/# exit
+exit
+[root@docker ~]# docker ps
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+# 退出方式2：Ctrl+P+Q
+[root@docker ~]# docker run -it nginx:1.18.0 bash
+root@ba7dce22a326:/# 
+[root@docker ~]# docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS     NAMES
+ba7dce22a326   nginx:1.18.0   "/docker-entrypoint.…"   9 seconds ago   Up 8 seconds   80/tcp    tender_mcclintock
 ```
 
 ### 3.7. 容器命令高级操作
