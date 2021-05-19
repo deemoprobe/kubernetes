@@ -353,29 +353,9 @@ exit # 退出
 
 ### 3.6. 退出容器
 
-- exit（等价于Ctrl+D） 退出并关闭容器(适用于docker run命令启动的容器, docker exec 进入容器exit退出后不影响容器状态)
-- Ctrl+P+Q 退出但不关闭容器(适用于docker run命令启动的容器)
+exit（等价于Ctrl+D） 退出并关闭容器(适用于docker run命令启动的容器, docker exec 进入容器exit退出后不影响容器状态)
 
-```shell
-# docker run启动容器
-[root@docker ~]# docker run -it nginx:1.18.0 bash
-root@888ff1b7371e:/# 
-# 另起一个terminal查看容器
-[root@docker ~]# docker ps
-CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS     NAMES
-888ff1b7371e   nginx:1.18.0   "/docker-entrypoint.…"   6 seconds ago   Up 5 seconds   80/tcp    hopeful_brahmagupta
-# 退出方式1：exit(Ctrl+D)
-root@888ff1b7371e:/# exit
-exit
-[root@docker ~]# docker ps
-CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
-# 退出方式2：Ctrl+P+Q
-[root@docker ~]# docker run -it nginx:1.18.0 bash
-root@ba7dce22a326:/# 
-[root@docker ~]# docker ps
-CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS     NAMES
-ba7dce22a326   nginx:1.18.0   "/docker-entrypoint.…"   9 seconds ago   Up 8 seconds   80/tcp    tender_mcclintock
-```
+一般需要后台运行的容器可以使用-d先后台启动，需要交互时exec进入容器进行交互。
 
 ### 3.7. 容器命令高级操作
 
@@ -416,16 +396,48 @@ docker cp 容器ID:/path /宿主机path
 ```shell
 # 如果该容器内部做了更改，提交打包后更改也包含进去，以此完成镜像的定制
 docker commit -a="作者名" -m="提交信息" 容器ID 定制后的镜像名
-# 操作
+# 启动一个容器，自定义端口映射，基于nginx:1.18.0镜像
+[root@docker ~]# docker run -d -p 8080:80 --name=nginx1.18.0 nginx:1.18.0
 [root@docker ~]# docker ps
-CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                  NAMES
-4f75469bc394        nginx:1.18.0        "/docker-entrypoint.…"   11 minutes ago      Up 11 minutes       0.0.0.0:8080->80/tcp   stoic_lamarr
-[root@docker ~]# docker commit -a="deemoprobe" -m="Create Nginx Myself." 4f75469bc394 test/nginx:v1
-sha256:a804b4414edeb7bb4bb80c239404599d53fb9ba54ddd9687712a4a492886324f
-[root@docker ~]# docker images
-REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-test/nginx          v1                  a804b4414ede        6 seconds ago       133MB
-nginx               1.18.0              2562b6bef976        6 hours ago         133MB
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS                  NAMES
+c3fd2aed7368   nginx:1.18.0   "/docker-entrypoint.…"   8 seconds ago   Up 8 seconds   0.0.0.0:8080->80/tcp   nginx1.18.0
+# 定制新镜像并打上tag为1.18.0
+[root@docker ~]# docker commit -a="deemoprobe" -m="8080:80->nginx1.18.0" c3fd2aed7368 deemoprobe/nginx:1.18.0
+sha256:b5fd6cb4ca9e4f24f6332f2d8b712df8256f75a6516c7484c966c797b9f81c5e
+# 查看新的镜像已生成
+[root@docker ~]# docker images deemoprobe/nginx
+REPOSITORY         TAG       IMAGE ID       CREATED          SIZE
+deemoprobe/nginx   1.18.0    b5fd6cb4ca9e   42 seconds ago   133MB
+# 提交到docker hub
+# 首先要创建docker hub账户，然后建立一个新仓库
+# 登陆docker hub
+[root@docker ~]# docker login
+...
+Login Succeeded
+# 推送
+[root@docker ~]# docker push deemoprobe/nginx:1.18.0
+The push refers to repository [docker.io/deemoprobe/nginx]
+4fa6704c8474: Mounted from library/nginx 
+4fe7d87c8e14: Mounted from library/nginx 
+6fcbf7acaafd: Mounted from library/nginx 
+f3fdf88f1cb7: Mounted from library/nginx 
+7e718b9c0c8c: Mounted from library/nginx 
+1.18.0: digest: sha256:2db445abcd9b126654035448cada7817300d646a27380916a6b6445e8ede699b size: 1362
+# docker hub上就能查看到nginx镜像仓库，并且标签为1.18.0
+# 拉下来查看
+[root@docker ~]# docker pull deemoprobe/nginx:1.18.0
+1.18.0: Pulling from deemoprobe/nginx
+f7ec5a41d630: Already exists 
+0b20d28b5eb3: Already exists 
+1576642c9776: Already exists 
+c12a848bad84: Already exists 
+03f221d9cf00: Already exists 
+Digest: sha256:2db445abcd9b126654035448cada7817300d646a27380916a6b6445e8ede699b
+Status: Downloaded newer image for deemoprobe/nginx:1.18.0
+docker.io/deemoprobe/nginx:1.18.0
+[root@docker ~]# docker images deemoprobe/nginx:1.18.0
+REPOSITORY         TAG       IMAGE ID       CREATED          SIZE
+deemoprobe/nginx   1.18.0    b5fd6cb4ca9e   20 minutes ago   133MB
 ```
 
 ### 3.9. 高级命令
