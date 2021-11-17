@@ -1,108 +1,166 @@
 # Kubernetes基础之常用命令
 
-## 1. 常用
+总览：配置命令自动补全功能，查看kubernetes集群的配置信息，kubernetes资源的增删改查，执行pod容器命令和查看资源日志。
+
+## 命令自动补全
 
 ```shell
-# 开放端口,将nginx服务的8080端口映射到本地30080端口
-kubectl port-forward --address 0.0.0.0 pod/nginx-6799fc88d8-xj4c4 30080:8080
-# pod容器内和本地传输文件
-kubectl cp nginx:db2379282hbbdsv:/etc/fstab /tmp
-# 查看对象的标签
-kubectl get nodes --show-labels
+# 安装配置bash-completion
+yum install -y bash-completion
+# kubectl配置到bash-completion中
+source <(kubectl completion bash)
+echo "source <(kubectl completion bash)" >> ~/.bashrc
 ```
 
-## 2. kubectl apply
-
-- 以文件或标准输入为准应用或更新资源
+## 集群配置信息
 
 ```shell
-# 使用 example-service.yaml 中的定义创建服务
-kubectl apply -f example-service.yaml
-
-# 使用 example-controller.yaml 中的定义创建 replication controller
-kubectl apply -f example-controller.yaml
-
-# 使用 <directory> 路径下的任意 .yaml, .yml, 或 .json 文件 创建对象
-kubectl apply -f <directory>
+# 查看集群简略信息，来自 ~/.kube/config 文件
+kubectl config view
+# 切换集群
+kubectl config use-context <cluster-name>
+# 查看集群所有用户信息
+kubectl config view -o jsonpath='{.users[*].name}'
 ```
 
-## 3. kubectl get
+## 增
 
-- 列出一个或多个资源
+- 以文件或标准输入为准创建或更新资源
+- 首次创建资源也可以使用kubectl create -f
 
 ```shell
-# 以纯文本输出格式列出所有 pod
-kubectl get pods
-
-# 以纯文本输出格式列出所有 pod，并包含附加信息(如节点名)
-kubectl get pods -o wide
-
-# 以纯文本输出格式列出具有指定名称的副本控制器
-kubectl get rc <rc-name>
-
-# 以纯文本输出格式列出所有副本控制器和服务
-kubectl get rc,svc
-
-# 列出在节点 k8s-node1 上运行的所有 pod
-kubectl get pods --field-selector=spec.nodeName=k8s-node1
-
-# 将单个 pod 的详细信息输出为 YAML 格式的对象
-kubectl get pod myweb-ctzhn -o yaml
-
+# 使用 example.yaml 中的定义创建资源
+kubectl apply -f example.yaml
+# 创建多个文件
+kubectl apply -f file1.yaml -f file2.yaml
+# 创建文件夹下所有资源
+kubectl apply -f ./dir
+# 创建来自URL的资源
+kubectl apply -f https://example.io/file.yaml
+# 创建单实例资源
+kubectl create deployment nginx --image=nginx
+# 仅生成yaml文件但不创建实例
+kubectl create deployment nginx --image=nginx --dry-run=client -oyaml > nginx.yaml
+# 创建名为hello的Job并打印hello
+kubectl create job hello --image=busybox -- echo "hello"
+# 创建名为hello的CronJob每分钟打印一次hello
+kubectl create cronjob hello --image=busybox --schedule="*/1 * * * *" -- echo "hello"
 ```
 
-## 4. kubectl describe
-
-- 显示一个或多个资源的详细状态，默认情况下包括未初始化的资源
-
-说明：  
-kubectl get 命令通常用于检索同一资源类型的一个或多个资源。 它具有丰富的参数，允许您使用 -o 或 --output 参数自定义输出格式。您可以指定 -w 或 --watch 参数以开始观察特定对象的更新。 kubectl describe 命令更侧重于描述指定资源的许多相关方面。它可以调用对 API 服务器 的多个 API 调用来为用户构建视图。 例如，该 kubectl describe node 命令不仅检索有关节点的信息，还检索在其上运行的 pod 的摘要，为节点生成的事件等。
-
-```shell
-# 显示名称为 <node-name> 的节点的详细信息。
-kubectl describe nodes <node-name>
-
-# 显示名为 <pod-name> 的 pod 的详细信息。
-kubectl describe pods/<pod-name>
-
-# 显示由名为 <rc-name> 的副本控制器管理的所有 pod 的详细信息。
-# 记住：副本控制器创建的任何 pod 都以复制控制器的名称为前缀。
-kubectl describe pods <rc-name>
-
-# 描述所有的 pod，不包括未初始化的 pod
-kubectl describe pods --include-uninitialized=false
-
-```
-
-## 5. kubectl delete
+## 删
 
 - 从文件、stdin 或指定标签选择器、名称、资源选择器或资源中删除资源
 
 ```shell
-# 使用 pod.yaml 文件中指定的类型和名称删除 pod。
-kubectl delete -f pod.yaml
+# 从文件
+kubectl delete -f file.yaml
 
-# 删除标签名= <label-name> 的所有 pod 和服务。
-kubectl delete pods,services -l name=<label-name>
+# 从标签
+kubectl delete pods -l name=<label-name>
 
-# 删除所有具有标签名称= <label-name> 的 pod 和服务，包括未初始化的那些。
-kubectl delete pods,services -l name=<label-name> --include-uninitialized
-
-# 删除所有 pod，包括未初始化的 pod。
+# 删除所有pod，但如果有上层资源（如deploy）未删除，可能会自动重新创建pod
 kubectl delete pods --all
 
 # 强制删除pod
 kubectl delete pod <name> --grace-period=0 --force -n <namespace>
-
-# 强制删除default这个namespace下的所有pod
-kubectl delete pods --all --grace-period=0 --force
 ```
 
-## 6. kubectl exec
+## 改
+
+```shell
+# kubectl set 支持更改如下字段
+env             image           resources       selector        serviceaccount  subject 
+
+# 例如：更改名为nginx的deployment的nginx镜像为v2版本
+kubectl set image deploy nginx nginx=nginx:v2
+
+# 查看更改历史
+kubectl rollout history deployment nginx
+# 回滚到上一个版本
+kubectl rollout undo deployment nginx
+# 回滚到指定版本
+kubectl rollout undo deployment nginx --to-revision=3
+
+# 直接应用编辑好的文件
+kubectl apply -f name.yaml
+
+# kubectl edit 命令编辑某资源，保存退出自动更改
+kubectl edit deployment nginx
+```
+
+## 查
+
+- 列出一个或多个资源（下面以pod为例，其他资源亦如此）
+
+```shell
+# 查看k8s支持的资源类型
+kubectl api-resources
+
+# 命名空间纳管的资源，false为非纳管资源
+kubectl api-resources --namespaced=true 
+
+# 支持list和get的资源
+kubectl api-resources --verbs=list,get
+
+# 查看某资源的详细信息: 版本，支持的字段等
+kubectl explain <apiresource-name>
+
+# 查看某资源下特定实例的详情信息：字段，事件，存储，调度等
+kubectl describe <apiresorce-name> <pod-name>
+
+# 列出当前namespace下所有 pod
+kubectl get pod
+
+# 列出所有namespace下的pod
+kubectl get pod -A
+
+# 扩展格式列出当前空间的所有pod
+kubectl get pod -owide
+
+# 查看pod并排序，根据name
+kubectl get pod --sort-by=.metadata.name
+
+# 查看pod并排序，根据重启次数
+kubectl get pods --sort-by=.status.containerStatuses[0].restartCount
+
+# 列出在节点 k8s-node1 上运行的所有 pod
+kubectl get pods --field-selector=spec.nodeName=k8s-node1
+or
+kubectl get pods -owide | grep k8s-node1
+
+# 将单个资源的详细信息输出为 YAML 格式的对象
+kubectl get pod nginx-6799fc88d8-5779h -oyaml
+kubectl get deploy nginx -oyaml
+
+# 列出pod便签信息
+kubectl get pods --show-labels
+```
+
+## 扩缩容
+
+```shell
+# 调整名为nginx的deployment副本数目为2
+kubectl scale --replicas=2 deployment nginx
+# 更改多个资源的副本数
+kubectl scale --replicas=2 deploy/nginx deploy/tomcat deploy/redis
+# 如果副本数为3，则调整为2
+kubectl scale --current-replicas=3 --replicas=2 deploy nginx
+```
+
+## 执行pod
 
 - 对 pod 中的容器执行命令
 
 ```shell
+# 交互式命令行运行容器
+kubectl run -it busybox --image=busybox -- sh
+
+# 运行nginx pod，如果没有该pod则自动创建
+kubectl run nginx --image=nginx
+
+# pod端口映射, 将nginx这个pod的80端口映射到本地的8080端口
+kubectl port-forward nginx 8080:80
+
 # 从 pod <pod-name> 中获取运行 'date' 的输出。默认情况下，输出来自第一个容器。
 kubectl exec <pod-name> date
   
@@ -110,11 +168,11 @@ kubectl exec <pod-name> date
 kubectl exec <pod-name> -c <container-name> date
 
 # 获取一个交互 TTY 并运行 /bin/bash <pod-name >。默认情况下，输出来自第一个容器。
-kubectl exec -ti <pod-name> /bin/bash
+kubectl exec -it <pod-name> -- sh
 
 ```
 
-## 7. kubectl logs
+## 查看pod日志
 
 - 打印 Pod 中容器的日志
 
@@ -124,9 +182,27 @@ kubectl logs <pod-name>
 
 # 从 pod <pod-name> 开始流式传输日志。这类似于 'tail -f' Linux 命令。
 kubectl logs -f <pod-name>
+
+# 当pod中含有多个容器，需指定特定容器查看日志
+kubectl logs <pod-name> -c <container-name>
 ```
 
-## 8. kubectl plugin
+## 节点和集群
+
+```shell
+# 标记节点为不可调度节点
+kubectl cordon <node-name>
+# 解除不可调度标记
+kubectl uncordon <node-name>
+# 安全驱逐准备回收的节点上所有pod到其他节点
+kubectl drain <node-name>
+# 查看节点的度量信息
+kubectl top node k8s-node
+# 查看集群主节点的地址
+kubectl cluster-info
+```
+
+## 插件
 
 - 插件
 
