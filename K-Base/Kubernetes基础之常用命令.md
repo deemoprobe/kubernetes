@@ -10,6 +10,9 @@ yum install -y bash-completion
 # kubectl配置到bash-completion中
 source <(kubectl completion bash)
 echo "source <(kubectl completion bash)" >> ~/.bashrc
+
+# 如果无效，执行下面的，可以先用whereis bash-completion查出命令所在目录
+echo "source /usr/share/bash-completion/bash_completion" >> ~/.bashrc
 ```
 
 ## 集群配置信息

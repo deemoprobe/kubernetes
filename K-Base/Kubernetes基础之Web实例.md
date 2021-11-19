@@ -1,35 +1,35 @@
 # Kubernetes基础之Web实例
 
-## 1. 实例说明
+## 实例说明
 
-创建运行在Tomcat里面的Web APP, 实现JSP页面通过jdbc直接访问MySQL数据库在页面上展示数据.  
-需要两个容器: Web APP 和 MySQL
+创建运行在Tomcat里面的Web, 实现JSP页面通过jdbc直接访问MySQL数据库在页面上展示数据.  
+需要两个容器: MySQL 和 Tomcat-Web
 
-## 2. 创建MySQL
+## 创建MySQL
 
 ```shell
-cd /etc/kubernetes/manifests
-# 创建RC
-vi mysql_rc.yaml
+vi mysql.yaml
 
-apiVersion: v1
-# 定义为 RC (副本控制器)
-# ReplicationSet目前在替代ReplicationController的写法,意义相同
-kind: ReplicationController
+apiVersion: apps/v1
+# 定义为deployment
+kind: Deployment
 metadata:
-  # RC的名称,全局唯一
+  # deploy的名称,全局唯一
   name: mysql
+  labels:
+    app: mysql
 spec:
-  # 希望创建的pod个数
+  # 希望创建的pod副本数
   replicas: 1
   selector:
     # 选择符合该标签的pod
-    app: mysql
+    matchLabels:
+      app: mysql
   # 根据模板下的定义来创建pod
   template:
     metadata:
       labels:
-        # pod的标签,对应RC的selector
+        # pod的标签,对应selector
         app: mysql
     # 定义pod规则
     spec:
@@ -48,10 +48,10 @@ spec:
         - name: MYSQL_ROOT_PASSWORD
           value: "123456"
 
-kubectl create -f mysql_rc.yaml
+kubectl create -f mysql.yaml
 
 # 创建 SVC
-vi mysql_svc.yaml
+vi mysqlsvc.yaml
 
 apiVersion: v1
 kind: Service
@@ -63,7 +63,7 @@ spec:
   selector:
     app: mysql
 
-kubectl create -f mysql_svc.yaml
+kubectl create -f mysqlsvc.yaml
 
 [root@k8main manifests]# kubectl get pods,svc
 NAME                         READY   STATUS    RESTARTS   AGE
@@ -76,73 +76,62 @@ service/mysql        ClusterIP   192.168.68.128   <none>        3306/TCP       1
 kubectl describe po mysql
 ```
 
-## 3. 创建 MyWeb APP
+## 创建 Web
 
 ```shell
-# 创建RC
-vi myweb_rc.yaml
+vi web.yaml
 
-apiVersion: v1
-kind: ReplicationController
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: myweb
+  name: web
+  labels:
+    app: web
 spec:
   replicas: 2
   selector:
-    app: myweb
+    matchLabels:
+      app: web
   template:
     metadata:
       labels:
-        app: myweb
+        app: web
     spec:
       containers:
-      - name: myweb
+      - name: web
         image: kubeguide/tomcat-app:v1
         ports:
         - containerPort: 8080
         env:
         - name: MYSQL_SERVICE_HOST
-          # 这里的IP是名为MySQL的pod虚拟IP(CLUSTER-IP)
-          value: 192.168.68.128
+          # 这里的IP是mysql_svc的虚拟IP(CLUSTER-IP)
+          value: "192.168.68.128"
         - name: MYSQL_SERVICE_PORT
           value: "3306"
 
-kubectl create -f myweb_rc.yaml
+kubectl create -f web.yaml
 
 # 创建 SVC
-vi myweb_svc.yaml
+vi websvc.yaml
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: myweb
+  name: web
 spec:
   selector:
-    app: myweb
+    app: web
   type: NodePort
   ports:
-    # 本地服务的8080端口映射到外部端口30001
-    - port: 8080
-      nodePort: 30001
+    # 本地服务的8080端口映射到node节点端口30001
+  - port: 8080
+    nodePort: 30001
 
 kubectl create -f myweb_svc.yaml
 ```
 
-## 4. 访问结果
+## 访问结果
 
 访问地址：IP:30001/demo/
 
 ![20201026143020](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201026143020.png)
-
-## 5. 问题总结
-
-1. MySQL版本需要选择5.6
-2. 端口访问不通
-
-```shell
-# 先打开防火墙, 开放端口再关闭
-systemctl start firewalld
-firewall-cmd --zone=public --add-port=30001/tcp --permanent
-firewall-cmd --reload
-systemctl stop firewalld
-```

@@ -59,3 +59,7 @@ Iptables：监听master节点增加和删除service以及endpoint的消息，对
 ## CoreDNS
 
 用于集群内部service的解析，可以让pod把service名称解析成ip地址，然后通过service的IP地址链接到对应的应用上。
+
+## Pod
+
+Pod是Kubernetes中最小的单元，是由一个或多个容器组成的。每个pod还包含一个pause容器，pause容器是pod的父容器，负责僵尸进程的回收管理，通过pause容器可以使同一个pod内多个容器共享存储、网络、PID、IPC等。

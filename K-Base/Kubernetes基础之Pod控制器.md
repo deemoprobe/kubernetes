@@ -1,12 +1,10 @@
 # Kubernetes基础之Pod控制器
 
-Yaml文件目录: /app/kubernetes/k_base/
-
-## 1. 控制器
+## 控制器
 
 Kubernetes 中内建了很多 controller(控制器),用来确保pod资源符合预期的状态,控制 Pod 的状态和行为.
 
-## 2. 控制器类型
+## 控制器类型
 
 - ReplicaSet(rs)
 - Deployment(deploy)
@@ -18,46 +16,20 @@ Kubernetes 中内建了很多 controller(控制器),用来确保pod资源符合�
 ```shell
 # 可以使用kubectl explain命令查看k8s API资源对象描述信息
 [root@k8s-master ~]# kubectl explain rs
-KIND:     ReplicaSet
-VERSION:  apps/v1
-
-DESCRIPTION:
-     ReplicaSet ensures that a specified number of pod replicas are running at
-     any given time.
-
-FIELDS:
-     ...
 
 # 查看API资源列表
 [root@k8s-master ~]# kubectl api-resources
-NAME                              SHORTNAMES   APIGROUP                       NAMESPACED   KIND
-bindings                                                                      true         Binding
-componentstatuses                 cs                                          false        ComponentStatus
-configmaps                        cm                                          true         ConfigMap
-endpoints                         ep                                          true         Endpoints
-events                            ev                                          true         Event
-limitranges                       limits                                      true         LimitRange
-namespaces                        ns                                          false        Namespace
-nodes                             no                                          false        Node
-persistentvolumeclaims            pvc                                         true         PersistentVolumeClaim
-persistentvolumes                 pv                                          false        PersistentVolume
-pods                              po                                          true         Pod
-replicationcontrollers            rc                                          true         ReplicationController
-resourcequotas                    quota                                       true         ResourceQuota
-serviceaccounts                   sa                                          true         ServiceAccount
-services                          svc                                         true         Service
-...
 ```
 
-### 2.1. ReplicaSet 和 ReplicationController
+### ReplicaSet 和 ReplicationController
 
 ReplicationController(RC)用来确保容器应用的副本数始终保持在用户定义的副本数,即如果有容器异常退出,会自动创建新的 Pod 来替代;而如果异常多出来的容器也会自动回收.
 
-在新版本的 Kubernetes 中建议使用 ReplicaSet 来取代 ReplicationController,ReplicaSet规则跟 ReplicationController 没有本质的不同,唯一区别是ReplicaSet支持`selector`选择器.
+在新版本的Kubernetes中建议使用ReplicaSet来取代ReplicationController,ReplicaSet规则跟ReplicationController没有本质的不同,唯一区别是ReplicaSet支持`selector`选择器.
 
-虽然 ReplicaSets 可以独立使用,但如今它主要被Deployments 用作协调 Pod 的创建、删除和更新的机制.
+虽然ReplicaSets可以独立使用,但如今它主要被Deployment等更高一级的资源用作协调Pod的创建、删除和更新的机制.
 
-#### 2.1.1. rc实现pod动态缩放
+#### rc实现pod动态缩放
 
 - 当前RC和pod情况是
 
@@ -78,17 +50,6 @@ replicationcontroller/myweb   2         2         2       24h
 ```shell
 [root@k8s-master ~]# kubectl scale rc mysql --replicas=3
 replicationcontroller/mysql scaled
-[root@k8s-master ~]# kubectl get pods,rc
-NAME                         READY   STATUS    RESTARTS   AGE
-pod/mysql-bqdvv              1/1     Running   0          5s
-pod/mysql-hdg66              1/1     Running   3          24h
-pod/mysql-hhb6t              1/1     Running   0          5s
-pod/myweb-ctzhn              1/1     Running   3          24h
-pod/myweb-dm94j              1/1     Running   3          24h
-
-NAME                          DESIRED   CURRENT   READY   AGE
-replicationcontroller/mysql   3         3         3       24h
-replicationcontroller/myweb   2         2         2       24h
 ```
 
 - 减少pod-mysql的副本(RC)数
@@ -96,28 +57,6 @@ replicationcontroller/myweb   2         2         2       24h
 ```shell
 [root@k8s-master ~]# kubectl scale rc mysql --replicas=1
 replicationcontroller/mysql scaled
-# 正在停止多余的副本
-[root@k8s-master ~]# kubectl get pods,rc
-NAME                         READY   STATUS        RESTARTS   AGE
-pod/mysql-bqdvv              1/1     Terminating   0          62s
-pod/mysql-hdg66              1/1     Running       3          24h
-pod/mysql-hhb6t              1/1     Terminating   0          62s
-pod/myweb-ctzhn              1/1     Running       3          24h
-pod/myweb-dm94j              1/1     Running       3          24h
-
-NAME                          DESIRED   CURRENT   READY   AGE
-replicationcontroller/mysql   1         1         1       24h
-replicationcontroller/myweb   2         2         2       24h
-# 缩放完成后
-[root@k8s-master ~]# kubectl get pods,rc
-NAME                         READY   STATUS    RESTARTS   AGE
-pod/mysql-hdg66              1/1     Running   3          24h
-pod/myweb-ctzhn              1/1     Running   3          24h
-pod/myweb-dm94j              1/1     Running   3          24h
-
-NAME                          DESIRED   CURRENT   READY   AGE
-replicationcontroller/mysql   1         1         1       24h
-replicationcontroller/myweb   2         2         2       24h
 ```
 
 ### 2.2. Deployment
@@ -134,7 +73,7 @@ Deployments 的典型用例:
 - 使用 Deployment 状态 来判定上线过程是否出现停滞.
 - 清理较旧的不再需要的 ReplicaSet.
 
-#### 2.2.1. 创建 Deployment
+#### 创建 Deployment
 
 下面是 Deployment 示例.其中创建了一个 ReplicaSet,负责启动三个 nginx Pods:
 
@@ -223,7 +162,7 @@ NAME                                      DESIRED   CURRENT   READY   AGE   CONT
 replicaset.apps/nginx-deploy-67dfd6c8f9   3         3         3       16m   nginx        nginx:1.18.0   app=nginx,pod-template-hash=67dfd6c8f9
 ```
 
-#### 2.2.2. 更新 Deployment
+#### 更新 Deployment
 
 Deployment 可确保在更新时仅关闭一定数量的 Pods.默认情况下,它确保至少 75% 所需 Pods 在运行(25%为容忍的最大不可用量).更新时不会先删除旧的pod,而是先新建一个pod.新pod运行时,才会删除对应老的pod.一切的前提都是为了满足上述的条件.
 
@@ -325,7 +264,7 @@ deployment "nginx-deploy" successfully rolled out
 deployment "nginx-deploy" successfully rolled out
 ```
 
-#### 2.2.3. 回滚 Deployment
+#### 回滚 Deployment
 
 ```shell
 # 回滚到上一个版本
@@ -353,7 +292,7 @@ nginx-deploy-559d658b74-pgrqv   1/1     Running   0          61s   172.16.36.110
 [root@k8s-master k_base]# kubectl apply -f nginx-deploy-1161.yaml --record
 ```
 
-#### 2.2.4. 回退到历史版本
+#### 回退到历史版本
 
 ```shell
 # 查看历史版本
@@ -383,7 +322,7 @@ kubectl rollout undo deployment/nginx-deploy --to-revision=6
 kubectl rollout pause deployment/nginx-deploy
 ```
 
-#### 2.2.5. 查看更新详情
+#### 查看更新详情
 
 ```shell
 [root@k8s-master k_base]# kubectl describe po nginx-deploy-559d658b74-9dgg8
@@ -486,7 +425,7 @@ Events:
 # 可以在 Deployment 中设置 .spec.revisionHistoryLimit,以指定保留多少该 Deployment 的 ReplicaSets数量
 ```
 
-### 2.3. DaemonSet
+### DaemonSet
 
 DaemonSet 确保全部(或者一些)Node节点上运行一个 Pod 的副本.当有 Node 加入集群时,也会为它们新增一个 Pod,当有 Node 从集群移除时,这些 Pod 也会被回收.删除 DaemonSet 将会删除它创建的所有 Pod.
 
@@ -571,7 +510,7 @@ fluentd-elasticsearch-cbl4x     1/1     Running            0          109s   172
 fluentd-elasticsearch-pzlpv     1/1     Running            0          108s   172.16.235.250   k8s-master   <none>           <none>
 ```
 
-### 2.4. Job
+### Job
 
 Job 负责批处理任务,即仅执行一次的任务,它保证批处理任务的一个或多个 Pod 成功结束.
 
@@ -617,7 +556,7 @@ pi-2nlj5   0/1     Completed   0          4m54s   172.16.36.119   k8s-node1   <n
 
 ![20201123180138](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201123180138.png)
 
-### 2.5. CronJob
+### CronJob
 
 Cron Job 管理基于时间的 Job,即:
 
@@ -687,7 +626,7 @@ cronjob.batch "hello" deleted
 No resources found in default namespace.
 ```
 
-### 2.6. StatefulSet
+### StatefulSet
 
 StatefulSet 是用来管理有状态应用的工作负载 API 对象.
 
@@ -706,7 +645,7 @@ StatefulSet 中的 Pod 拥有独一无二的身份标识.这个标识基于 Stat
 
 如果应用程序不需要任何稳定的标识符或有序的部署、删除或伸缩,则应该使用由一组无状态的副本控制器提供的工作负载来部署应用程序,比如使用 Deployment 或者 ReplicaSet 可能更适用于无状态应用部署需要.
 
-#### 2.6.1. 限制
+#### 限制
 
 - 给定 Pod 的存储必须由 PersistentVolume(PV) 驱动基于所请求的 storage class 来提供,或者由管理员预先提供.
 - 删除或者收缩 StatefulSet 并不会删除它关联的存储卷.这样做是为了保证数据安全,它通常比自动清除 StatefulSet 所有相关的资源更有价值.
@@ -714,13 +653,13 @@ StatefulSet 中的 Pod 拥有独一无二的身份标识.这个标识基于 Stat
 - 当删除 StatefulSets 时,StatefulSet 不提供任何终止 Pod 的保证.为了实现 StatefulSet 中的 Pod 可以有序和优雅的终止,可以在删除之前将 StatefulSet 缩放为 0.
 - 在默认 Pod 管理策略(OrderedReady) 时使用滚动更新,可能进入需要人工干预才能修复的损坏状态.
 
-#### 2.6.2. 有序索引
+#### 有序索引
 
 对于具有 N 个副本的 StatefulSet,StatefulSet 中的每个 Pod 将被分配一个整数序号,从 0 到 N-1,该序号在 StatefulSet 上是唯一的.
 
 StatefulSet 中的每个 Pod 根据 StatefulSet 中的名称和 Pod 的序号来派生出它的主机名.组合主机名的格式为`<statefulset name>-<ordinal index>`.
 
-#### 2.6.3. 部署和扩缩保证
+#### 部署和扩缩保证
 
 - 对于包含 N 个 副本的 StatefulSet,当部署 Pod 时,它们是依次创建的,顺序为 0~(N-1).
 - 当删除 Pod 时,它们是逆序终止的,顺序为 (N-1)~0.
@@ -729,13 +668,13 @@ StatefulSet 中的每个 Pod 根据 StatefulSet 中的名称和 Pod 的序号来
 
 StatefulSet 不应将 pod.Spec.TerminationGracePeriodSeconds 设置为 0.这种做法是不安全的,要强烈阻止.
 
-#### 2.6.4. 部署顺序
+#### 部署顺序
 
 在下面的 nginx 示例被创建后,会按照 web-0、web-1、web-2 的顺序部署三个 Pod.在 web-0 进入 Running 和 Ready 状态前不会部署 web-1.在 web-1 进入 Running 和 Ready 状态前不会部署 web-2.
 
 如果 web-1 已经处于 Running 和 Ready 状态,而 web-2 尚未部署,在此期间发生了 web-0 运行失败,那么 web-2 将不会被部署,要等到 web-0 部署完成并进入 Running 和 Ready 状态后,才会部署 web-2.
 
-#### 2.6.5. 收缩顺序
+#### 收缩顺序
 
 如果想将示例中的 StatefulSet 收缩为 replicas=1,首先被终止的是 web-2.在 web-2 没有被完全停止和删除前,web-1 不会被终止.当 web-2 已被终止和删除；但web-1 尚未被终止,如果在此期间发生 web-0 运行失败,那么就不会终止 web-1,必须等到 web-0 进入 Running 和 Ready 状态后才会终止 web-1.
 
@@ -756,7 +695,7 @@ FIELDS:
 ...
 ```
 
-#### 2.6.6. StatefulSet实例
+#### StatefulSet实例
 
 ```shell
 [root@k8s-master k_base]# pwd
@@ -845,7 +784,7 @@ Address 6: 172.16.36.100 172-16-36-100.nginx.default.svc.cluster.local
 Address 7: 172.16.36.96 web-0.nginx.default.svc.cluster.local
 ```
 
-### 2.7. Horizontal Pod Autoscaling(HPA)
+### Horizontal Pod Autoscaling(HPA)
 
 顾名思义, Pod 水平自动缩放,提高集群的整体资源利用率.
 
@@ -860,7 +799,7 @@ Horizontal Pod Autoscaling可以根据指标自动伸缩一个Replication Contro
 - autoscaling/v1: v1版本只支持 cpu
 - autoscaling/v2beta2: v2beta2版本支持 自定义 ,内存 ,但是目前也仅仅是处于beta阶段
 
-#### 2.7.1. 指标从哪里来
+#### 指标从哪里来
 
 Horizontal Pod AutoScaler被实现为一个控制循环,周期由控制器管理器的–Horizontal Pod AutoScaler sync period标志(默认值为15秒)控制.
 
@@ -868,17 +807,17 @@ Horizontal Pod AutoScaler被实现为一个控制循环,周期由控制器管理
 
 对于每个pod的资源度量(如cpu),控制器从horizontalpodautoscaler针对每个pod的资源度量api获取度量.然后,如果设置了目标利用率值,则控制器将利用率值计算为每个pod中容器上等效资源请求的百分比.如果设置了目标原始值,则直接使用原始度量值.然后,控制器获取所有目标pod的利用率平均值或原始值(取决于指定的目标类型),并生成用于缩放所需副本数量的比率.
 
-#### 2.7.2. 为什么目前能使用的指标是CPU
+#### 为什么目前能使用的指标是CPU
 
 v1的模板可能是大家平时见到最多的也是最简单的,v1版本的HPA只支持一种指标 —— CPU.传统意义上,弹性伸缩最少也会支持CPU与Memory两种指标,为什么在Kubernetes中只放开了CPU呢?其实最早的HPA是计划同时支持这两种指标的,但是实际的开发测试中发现,内存不是一个非常好的弹性伸缩判断条件.因为和CPU不同,很多内存型的应用,并不会因为HPA弹出新的容器而带来内存的快速回收,因为很多应用的内存都要交给语言层面的VM进行管理,也就是内存的回收是由VM的GC来决定的.这就有可能因为GC时间的差异导致HPA在不恰当的时间点震荡,因此在v1的版本中,HPA就只支持了CPU一种指标.
 
-#### 2.7.3. HPA与rolling update的区别
+#### HPA与rolling update的区别
 
 目前在kubernetes中,可以通过直接管理复制控制器来执行滚动更新,也可以使用deployment对象来管理底层副本集.HPA只支持后一种方法: HPA绑定到部署对象,设置部署对象的大小,部署负责设置底层副本集的大小.
 
 HPA不能使用复制控制器的直接操作进行滚动更新,即不能将HPA绑定到复制控制器并进行滚动更新(例如,使用Kubectl滚动更新).这不起作用的原因是,当滚动更新创建新的复制控制器时,HPA将不会绑定到新的复制控制器.
 
-#### 2.7.4. HPA怎么使用
+#### HPA怎么使用
 
 1.使用kubectl的方式
 
@@ -904,7 +843,7 @@ spec:
   targetCPUUtilizationPercentage: 50
 ```
 
-#### 2.7.5 示例
+#### 示例
 
 下载国内示例镜像
 
