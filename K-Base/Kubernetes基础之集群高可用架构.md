@@ -1,4 +1,4 @@
-# Kubernetes基础之相关概念
+# Kubernetes基础之集群高可用架构
 
 ## Kubernetes是什么
 
@@ -20,7 +20,7 @@ Kubernetes 是谷歌开源的容器集群管理系统，是 Google 多年大规�
 
 ## 核心组件
 
-Kubernetes重要由以下几个核心组件组成:
+Kubernetes核心组件简要介绍:
 
 - apiserver 提供了资源操作的唯一入口，并提供认证、授权、访问控制、API 注册和发现等机制
 - controller-manager 负责维护集群的状态，比如发现和响应节点下线、故障检测、自动扩展、滚动更新等
@@ -31,22 +31,26 @@ Kubernetes重要由以下几个核心组件组成:
 - etcd 保存整个集群的状态，是集群数据的后台存储区，键值数据库
 - cloud-controller-manager 云端控制管理中心，依赖于云供应商
 
+Kubernetes高可用架构图如图所示
+
+![Kubernetes高可用架构](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/Kubernetes高可用架构.drawio.png)
+
 ## Master节点
 
 整个集群的控制中枢，核心组件如下：
 
-- apiserver 集群的控制中心，各个模块之间信息交互都需要经过apiserver，同时也是集群管理、资源配额、安全机制的入口
+- apiserver 集群控制平面的前端，处理内外部请求，各个模块组件的信息交互都需要经过apiserver。apiserver会判定请求的有效性，对有效请求进行处理。是集群管理、资源配额、安全机制的入口。
 - controller-manager 集群的状态管理器，保证pod或其他资源达到期望值，也是需要和apiserver进行通信，在需要的时候可以创建、更新、删除相应的资源
-- scheduler 集群资源调度器，根据一系列预定的条件对资源进行调度
-- etcd 键值数据库
+- scheduler 集群资源调度器，根据预定的条件对资源进行调度。调度程序会考虑Pods的资源需求（例如 CPU 或内存）以及集群的运行状况，随后将Pods调度到合适的计算节点。
+- etcd 键值数据库（可以与master集群节点共存，资源允许的话推荐单独做etcd集群）
 
-master节点资源一定要尽量给够，以至于后期不会拖累集群的整体性能。并且允许的情况下，etcd最好也要和master节点区分开来，单独创建集群进行数据的存储，etcd-cluster必须使用高性能ssd硬盘，否则后期将大大影响集群的性能
+master节点资源一定要尽量给够，以至于后期不会拖累集群的整体性能。并且允许的情况下，etcd最好也要和master节点区分开来，单独创建集群进行数据的存储，etcd-cluster必须使用高性能ssd硬盘，否则后期将大大影响集群的性能。
 
 ## Node节点
 
 应用部署的节点，工作节点，资源调度的对象，核心组件如下：
 
-- kubelet 负责监听节点上pod的状态，同时负责将状态上报给master节点，与master节点进行通信
+- kubelet 负责监听节点上pod的状态，同时负责将状态上报给master节点，与master节点apiserver进行通信
 - kube-proxy 负责pod之间的通信和负载均衡，将指定的流量分发到后端正确的机器上，一般工作模式默认为ipvs
 
 IPVS：监听master节点增加和删除service以及endpoint的消息，调用netlink接口创建相应的ipvs规则。通过ipvs规则将流量转到相应的pod上。ipvs是内核级的转发，速度很快  
