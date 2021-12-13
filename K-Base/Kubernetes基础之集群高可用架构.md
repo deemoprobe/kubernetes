@@ -39,7 +39,7 @@ Kubernetes高可用架构图如图所示
 
 整个集群的控制中枢，核心组件如下：
 
-- apiserver 集群控制平面的前端，处理内外部请求，各个模块组件的信息交互都需要经过apiserver。apiserver会判定请求的有效性，对有效请求进行处理。是集群管理、资源配额、安全机制的入口。
+- apiserver 集群控制平面的前端，处理内外部请求，各个模块组件的信息交互都需要经过apiserver。apiserver会判定请求的有效性，对有效请求进行处理。同时是集群管理、资源配额、安全机制的入口。
 - controller-manager 集群的状态管理器，保证pod或其他资源达到期望值，也是需要和apiserver进行通信，在需要的时候可以创建、更新、删除相应的资源
 - scheduler 集群资源调度器，根据预定的条件对资源进行调度。调度程序会考虑Pods的资源需求（例如 CPU 或内存）以及集群的运行状况，随后将Pods调度到合适的计算节点。
 - etcd 键值数据库（可以与master集群节点共存，资源允许的话推荐单独做etcd集群）
@@ -55,6 +55,10 @@ master节点资源一定要尽量给够，以至于后期不会拖累集群的�
 
 IPVS：监听master节点增加和删除service以及endpoint的消息，调用netlink接口创建相应的ipvs规则。通过ipvs规则将流量转到相应的pod上。ipvs是内核级的转发，速度很快  
 Iptables：监听master节点增加和删除service以及endpoint的消息，对于每一个service，都会创建一个iptables规则，将service的clusterIP代理到后端对应的pod上。当规则很多时，性能会比ipvs差，所以一般选择ipvs即可。
+
+## Container Runtime
+
+容器运行时环境，可选择诸如：Docker、containerd、CRI-O，官方介绍:[容器运行时](https://kubernetes.io/zh/docs/setup/production-environment/container-runtimes/)
 
 ## Calico
 
