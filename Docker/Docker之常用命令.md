@@ -1,6 +1,6 @@
 # Docker之常用命令
 
-## 1. RTFM
+## Usage
 
 ```shell
 Usage:  docker [OPTIONS] COMMAND
@@ -85,7 +85,7 @@ Commands:
   wait        Block until one or more containers stop, then print their exit codes
 ```
 
-## 2. 镜像命令
+## 镜像命令
 
 - REPOSITORY: 镜像的仓库源
 - TAG: 镜像标签
@@ -93,7 +93,7 @@ Commands:
 - CREATED: 镜像已创建时间
 - SIZE: 镜像大小
 
-### 2.1. docker image
+### docker image
 
 Usage:  docker images [OPTIONS] [REPOSITORY[:TAG]]
 
@@ -118,7 +118,7 @@ docker images -q
 docker images -qa
 ```
 
-### 2.2. docker search
+### docker search
 
 Usage:  docker search [OPTIONS] [IMAGE]
 
@@ -140,7 +140,7 @@ docker search -f=stars=15 IMAGE
 docker search --no-trunc -f=stars=100 nginx
 ```
 
-### 2.3. docker pull
+### docker pull
 
 Usage:  docker pull [OPTIONS] NAME[:TAG|@DIGEST]
 
@@ -159,7 +159,7 @@ docker pull IMAGE  <==>  docker pull IMAGE:latest
 docker pull IMAGE:TAG
 ```
 
-### 2.4. docker rmi
+### docker rmi
 
 Usage:  docker rmi [OPTIONS] IMAGE [IMAGE...]
 
@@ -193,9 +193,9 @@ Untagged: hello-world@sha256:8c5aeeb6a5f3ba4883347d3747a7249f491766ca1caa47e5da5
 Deleted: sha256:bf756fb1ae65adf866bd8c456593cd24beb6a0a061dedf42b26a993176745f6b
 ```
 
-## 3. 容器命令
+## 容器命令
 
-### 3.1. docker run
+### docker run
 
 docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
 
@@ -261,7 +261,7 @@ CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS  
 
 ![20201125144623](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20201125144623.png)
 
-### 3.2. docker ps
+### docker ps
 
 Usage:  docker ps [OPTIONS]
 
@@ -300,7 +300,7 @@ CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS   
 1827aed9779f   hello-world    "/hello"                 7 days ago      Exited (0) 7 days ago                quirky_raman   0B (virtual 13.3kB)
 ```
 
-### 3.3. 容器启停
+### 容器启停
 
 ```shell
 # 启动已停止的容器
@@ -313,7 +313,7 @@ docker stop 容器名或ID
 docker kill 容器名或ID
 ```
 
-### 3.4. 删除容器
+### 删除容器
 
 ```shell
 # 删除已停止容器
@@ -326,7 +326,7 @@ or
 docker ps -qa | xargs docker rm
 ```
 
-### 3.5. 进入正在运行的容器
+### 进入正在运行的容器
 
 Usage:  docker exec [OPTIONS] CONTAINER COMMAND [ARG...]
 
@@ -351,13 +351,13 @@ docker exec -it 容器ID ls -al /
 exit # 退出
 ```
 
-### 3.6. 退出容器
+### 退出容器
 
 exit（等价于Ctrl+D） 退出并关闭容器(适用于docker run命令启动的容器, docker exec 进入容器exit退出后不影响容器状态)
 
 一般需要后台运行的容器可以使用-d先后台启动，需要交互时exec进入容器进行交互。
 
-### 3.7. 容器命令高级操作
+### 容器命令高级操作
 
 docker单独启动容器作为守护进程(后台运行), 启动后`docker ps -a`会发现已经退出了  
 原因是：docker容器运行机制决定,docker容器后台运行就必须要有一个前台进程,否则会自动退出  
@@ -391,7 +391,7 @@ docker top 容器ID
 docker cp 容器ID:/path /宿主机path
 ```
 
-### 3.8. 镜像的定制
+### 镜像的定制
 
 ```shell
 # 如果该容器内部做了更改，提交打包后更改也包含进去，以此完成镜像的定制
@@ -440,7 +440,7 @@ REPOSITORY         TAG       IMAGE ID       CREATED          SIZE
 deemoprobe/nginx   1.18.0    b5fd6cb4ca9e   20 minutes ago   133MB
 ```
 
-### 3.9. 高级命令
+### 高级命令
 
 - 查看docker配置信息
 
