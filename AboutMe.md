@@ -21,19 +21,19 @@
 截至2022年1月1日，已取得相关技能证书清单如下：
 
 - **RED HAT CERTIFIED SYSTEM ADMINISTRATOR**
-![20220103215854](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20220103215854.png)
+![RHCSA](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/RHCSA.png)
 证书验证：<https://rhtapps.redhat.com/verify>
 
 - **RED HAT CERTIFIED ENGINEER**
-![20220103215915](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20220103215915.png)
+![RHCE](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/RHCE.png)
 证书验证：<https://rhtapps.redhat.com/verify>
 
 - **CERTIFIED KUBERNETES ADMINISTRATOR**
-![CKA证书照片](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/CKA证书照片.jpg)
+![CKA](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/CKA.jpg)
 证书验证：<https://training.linuxfoundation.org/certification/verify>
 
 - **CERTIFIED KUBERNETES SECURITY SPECIALIST**
-![CKS证书照片](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/CKS证书照片.jpg)
+![CKS](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/CKS.jpg)
 证书验证：<https://training.linuxfoundation.org/certification/verify>
 
 诸君共勉: **业精于勤荒于嬉,行成于思毁于随**
