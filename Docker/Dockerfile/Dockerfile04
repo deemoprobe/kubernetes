@@ -1,3 +1,0 @@
-FROM onbuild
-RUN yum install -y curl
-ENTRYPOINT [ "/bin/echo", "test onbuild" ]

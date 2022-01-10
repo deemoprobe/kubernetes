@@ -1,4 +1,0 @@
-FROM centos
-MAINTAINER deemoprobe<deemoprobe@gmail.com>
-RUN yum install -y curl
-CMD [ "/bin/echo", "echo test" ]

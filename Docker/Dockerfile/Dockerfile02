@@ -1,3 +1,0 @@
-FROM centos
-RUN yum install -y curl
-ENTRYPOINT [ "/bin/echo", "echo test" ]
