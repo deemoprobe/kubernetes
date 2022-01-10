@@ -1,25 +1,146 @@
 # Docker之Dockerfile
 
-## dockerfile字段解析
+Dockerfile是创建新镜像的命令合集文本文件。
 
-Dockerfile详情解释可参考[https://www.cnblogs.com/panwenbin-logs/p/8007348.html]
+## 字段解析
+
+![dockerfs](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/dockerfs.png)
+
+### 简介
 
 ```shell
-FROM base_image[基础镜像,该文件创建新镜像所依赖的镜像]
-MAINTAINER user_name and user_email[作者姓名和邮件]
+FROM image[基础镜像,该文件创建新镜像所依赖的镜像]
+MAINTAINER user<email>[作者姓名和邮箱]
 RUN command[镜像构建时运行的命令]
-EXPOSE port[容器对外暴露的端口]
-WORKDIR work_directory[进入容器默认进入的目录]
-ENV set_env[创建环境变量]
 ADD [文件拷贝进镜像并解压]
 COPY [文件拷贝进镜像]
+CMD [容器启动时要运行的命令或参数]
+ENTRYPOINT [容器启动时要运行的命令]
+EXPOSE port[声明端口]
+WORKDIR work_directory[进入容器默认进入的目录]
+ENV set_env[创建环境变量]
 VOLUME [容器数据卷,用于数据保存和持久化]
-CMD [容器启动时要运行的命令,可以设置多个CMD,但最后一个生效,前面的不生效,也会被docker run启动容器时后面加的命令替换]
-ENTYPOINT [容器启动时要运行的命令,多个命令依次执行]
 ONBUILD [当构建一个被继承的Dockerfile时运行命令]
 ```
 
-## 执行
+### 用法
+
+- FROM 基础镜像
+
+```bash
+# 如果不指定版本，默认使用latest
+FROM image
+FROM image:tag
+FROM image@digest
+
+# 示例
+FROM nginx:1.18.0
+```
+
+- MAINTAINER 作者
+
+```bash
+MAINTAINER user
+MAINTAINER email
+MAINTAINER user<email>
+
+# 示例
+MAINTAINER deemo<deemo@gmail.com>
+```
+
+- RUN 构建镜像时执行的命令
+
+```bash
+# Dockerfile里的指令每执行一次会在镜像文件系统中新建一层，为了避免多层文件造成镜像过大，多条命令写在一个RUN后面
+# RUN指令创建的中间镜像会被缓存，并会在下次构建中使用。如果不想使用这些缓存镜像，可以在构建时指定--no-cache参数，如：docker build --no-cache
+RUN command
+RUN ["<executable>","<param1>","<param2>",...]
+
+# 示例
+RUN yum install -y curl
+RUN ["./test.php","dev","offline"]  #等价于 RUN ./test.php dev offline
+```
+
+- ADD 本地文件拷贝进镜像，tar类型的会自动解压
+
+```bash
+ADD <src> <dest>
+
+# 示例
+ADD file /dir/ #添加file到/dir/目录
+ADD file dir/ #添加file到{WORKDIR}/dir目录
+ADD fi* /dir #通配符，添加所有以fi开头的文件到/dir/目录
+```
+
+- COPY 本地文件拷贝进镜像，但不会解压
+
+```bash
+COPY <src> <dest>
+```
+
+- CMD 容器启动时（docker run时）要运行的命令或参数
+
+```bash
+# 可以设置多个CMD,但最后一个生效,前面的不生效,也可以被docker run启动容器时后面加的命令替换
+CMD ["<executable>","<param1>","<param2>",...] #执行可执行文件
+CMD ["<param1>","<param2>",...] #已设置ENTRYPOINT，则调用ENTRYPOINT后添加CMD参数
+CMD command param1 param2 ... #执行shell内部命令
+
+# 示例
+CMD ["/usr/bin/ls","-al"]
+CMD echo "hello"
+```
+
+- ENTRYPOINT 容器启动时要运行的命令
+
+```bash
+# 类似于CMD指令，但其不会被docker run的命令行参数指定的指令所覆盖
+# 存在多个ENTRYPOINT时，仅最后一个生效
+ENTRYPOINT ["<executeable>","<param1>","<param2>",...]
+
+# 示例
+ENTRYPOINT ["nginx", "-c"] #定参
+CMD ["/etc/nginx/nginx.conf"] #变参
+```
+
+- EXPOSE 声明容器端口
+
+```bash
+# EXPOSE仅是声明端口。要使其可访问，需要在docker run运行容器时通过-p来指定端口映射，或通过-P参数来映射EXPOSE端口
+EXPOSE <port> [<port>...]
+
+# 示例
+EXPOSE 80
+EXPOSE 80 443
+```
+
+- WORKDIR 工作目录
+
+```bash
+
+```
+
+ENV set_env[创建环境变量]
+
+```bash
+
+```
+
+VOLUME [容器数据卷,用于数据保存和持久化]
+
+```bash
+
+```
+
+ONBUILD [当构建一个被继承的Dockerfile时运行命令]
+
+```bash
+
+```
+
+LABEL
+
+## 实例1
 
 ```shell
 # 执行任意路径下的dockerfile

@@ -86,11 +86,143 @@ rootfs(root file system),在bootfs之上。包含的就是典型Linux系统中�
 
 Docker镜像采用分层结构最大的一个好处就是共享资源。比如：有多个镜像都从相同的base镜像构建而来，那么宿主机只需在磁盘上保存一份base镜像,同时内存中也只需加载一份base镜像，就可以为所有容器服务了。而且镜像的每一层都可以被共享。
 
-![dockerfs](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/dockerfs.png)
-
 ## Docker部署
 
 [官方参考文档](https://docs.docker.com/)
 [个人博客文档](http://www.deemoprobe.com/yunv/kuberneteskubadm/#DockerALL)
+
+## 数据卷
+
+Docker 镜像是由多个文件系统（只读层）叠加而成。当我们启动一个容器的时候，Docker 会加载只读镜像层并在其上（镜像栈顶部）添加一个读写层。如果运行中的容器修改了现有的一个已经存在的文件，那该文件将会从读写层下面的只读层复制到读写层，该文件的只读版本仍然存在，只是已经被读写层中该文件的副本所隐藏。当删除Docker容器，并通过该镜像重新启动时，之前的更改将会丢失。
+
+![dockerfs](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/dockerfs.png)
+
+为了能够保存（持久化）数据以及共享容器间的数据，Docker提出了Volume的概念。简单来说，数据卷是存在于一个或多个容器中的特定文件或文件夹，它可以绕过默认的联合文件系统，以正常的文件或者目录的形式存在于宿主机上。其生存周期独立于容器的生存周期。
+
+![dockervolume](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/dockervolume.png)
+
+Docker提供了三种方式将数据从宿主机挂载到容器中：
+
+- volumes: Docker管理宿主机文件系统的一部分，默认位于 var/lib/docker/volumes 目录中，这是最常用的方式。
+- bind mounts: 可以存储在宿主机系统的任意位置，但在目录结构不同的操作系统之间不可移植。
+- tmpfs: 挂载存储在宿主机系统的内存中，而不会写入宿主机的文件系统。
+
+### docker volume
+
+```bash
+[root@demo ~]# docker volume --help
+
+Usage:  docker volume COMMAND
+
+Manage volumes
+
+Commands:
+  create      Create a volume
+  inspect     Display detailed information on one or more volumes
+  ls          List volumes
+  prune       Remove all unused local volumes
+  rm          Remove one or more volumes
+
+# 创建volume
+[root@demo ~]# docker volume create new_volume
+new_volume
+[root@demo ~]# docker volume ls
+DRIVER    VOLUME NAME
+local     new_volume
+[root@demo ~]# docker volume inspect new_volume
+[
+    {
+        "CreatedAt": "2022-01-10T07:43:43+08:00",
+        "Driver": "local",
+        "Labels": {},
+        "Mountpoint": "/var/lib/docker/volumes/new_volume/_data",
+        "Name": "new_volume",
+        "Options": {},
+        "Scope": "local"
+    }
+]
+# 在宿主机可以找到对应目录
+[root@demo ~]# ls -al /var/lib/docker/volumes/
+..
+drwx-----x.  3 root root     19 Jan 10 07:43 new_volume
+
+命令行中可以用-v使用数据卷
+-v/--volume，由（:）分隔的三个字段组成，卷名:容器路径:选项。选项可以ro/rw。
+
+--mount，由多个键值对组成，由,分隔，每个由一个key=value元组组成。
+type，值可以为 bind，volume，tmpfs。
+source，对于命名卷，是卷名。对于匿名卷，这个字段被省略。可能被指定为 source 或 src。
+destination，文件或目录将被挂载到容器中的路径。可以指定为 destination，dst 或 target。
+volume-opt 可以多次指定。
+
+# 挂载数据卷new_volume到容器的/volume目录，创建文件并查看同步效果
+# 下面命令等效于 docker run -itd --name mountvol --mount source=new_volume,target=/volume nginx
+[root@demo ~]# docker run -itd --name mountvol -v new_volume:/volume nginx
+c3450a454f209f30987f60863547c7a5a60d58fffa19faf89c08d0840cb6e1ac
+[root@demo ~]# docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS     NAMES
+c3450a454f20   nginx     "/docker-entrypoint.…"   22 seconds ago   Up 20 seconds   80/tcp    mountvol
+[root@demo ~]# docker exec -it c3450a454f20 /bin/bash
+root@c3450a454f20:/# cd /volume/
+root@c3450a454f20:/volume# echo volume > testfile
+root@c3450a454f20:/volume# ls  
+testfile
+root@c3450a454f20:/volume# exit
+exit
+[root@demo ~]# cat /var/lib/docker/volumes/new_volume/_data/testfile 
+volume
+
+# 默认数据卷在容器内挂载内容具备读写（rw）权限，指定只读
+[root@demo ~]# docker run -itd --name mountvol2 -v new_volume:/volume:ro nginx
+440ca257ed6de9b4387dc83d85b67e071ebafdb27ce5b5b2e4faa970c21cbd97
+[root@demo _data]# docker exec -it 440ca257ed6d /bin/bash
+root@440ca257ed6d:/# cd /volume/
+root@440ca257ed6d:/volume# touch file
+touch: cannot touch 'file': Read-only file system
+
+# 清理容器和数据卷
+[root@demo _data]# docker volume rm new_volume
+Error response from daemon: remove new_volume: volume is in use - [c3450a454f209f30987f60863547c7a5a60d58fffa19faf89c08d0840cb6e1ac]
+[root@demo _data]# docker ps -a
+CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS     NAMES
+c3450a454f20   nginx     "/docker-entrypoint.…"   16 minutes ago   Up 16 minutes   80/tcp    mountvol
+[root@demo _data]# docker stop c3450a454f20
+c3450a454f20
+[root@demo _data]# docker rm c3450a454f20
+c3450a454f20
+[root@demo _data]# docker volume rm new_volume
+new_volume
+[root@demo _data]# docker volume ls
+DRIVER    VOLUME NAME
+
+# 清除未使用的数据卷
+docker volume prune vol_name
+```
+
+### 使用主机目录
+
+```bash
+# 将主机任意目录挂载到容器作为数据卷，-v参数，如果宿主机没有相关目录，会自动创建
+[root@demo ~]# docker run -itd --name web -v /webapp:/usr/share/nginx/html nginx
+46b47e81ee8e53687b78aa109389f75135cdb70005934f1e4d49a992e47eb3ff
+[root@demo ~]# docker inspect web | grep -e Mounts -A 9
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "/webapp",
+                "Destination": "/usr/share/nginx/html",
+                "Mode": "",
+                "RW": true,
+                "Propagation": "rprivate"
+            }
+        ],
+# --mount，宿主机目录不存在会报错
+[root@demo ~]# docker run -itd --name web2 --mount type=bind,source=/app/webapp,target=/usr/share/nginx/html,readonly nginx
+docker: Error response from daemon: invalid mount config for type "bind": bind source path does not exist: /app/webapp.
+See 'docker run --help'.
+[root@demo ~]# mkdir -p /app/webapp
+[root@demo ~]# docker run -itd --name web2 --mount type=bind,source=/app/webapp,target=/usr/share/nginx/html,readonly nginx
+2f0f5e1a42bf63995fbe3918842bd541dd173d1b25dfe458e1043591b9d42ef8
+```
 
 > 网络参考文件：[国家保密局-开源容器技术安全分析](http://www.gjbmj.gov.cn/n1/2021/1014/c411145-32253882.html)
