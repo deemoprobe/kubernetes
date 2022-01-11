@@ -1,7 +1,5 @@
 # Kubernetes基础之Pod控制器
 
-## 控制器
-
 Kubernetes 中内建了很多 controller(控制器),用来确保pod资源符合预期的状态,控制 Pod 的状态和行为.
 
 ## 控制器类型
@@ -14,7 +12,7 @@ Kubernetes 中内建了很多 controller(控制器),用来确保pod资源符合�
 - Job/CronJob(cj)
 - Horizontal Pod Autoscaling(hpa)
 
-```shell
+```bash
 # 可以使用kubectl explain命令查看k8s API资源对象描述信息
 [root@k8s-master ~]# kubectl explain rs
 
@@ -22,7 +20,7 @@ Kubernetes 中内建了很多 controller(控制器),用来确保pod资源符合�
 [root@k8s-master ~]# kubectl api-resources
 ```
 
-### ReplicaSet 和 ReplicationController
+### RS和RC
 
 ReplicationController(RC)用来确保容器应用的副本数始终保持在用户定义的副本数,即如果有容器异常退出,会自动创建新的 Pod 来替代;而如果异常多出来的容器也会自动回收.
 
@@ -30,11 +28,11 @@ ReplicationController(RC)用来确保容器应用的副本数始终保持在用�
 
 虽然ReplicaSets可以独立使用,但如今它主要被Deployment等更高一级的资源用作协调Pod的创建、删除和更新的机制.
 
-#### rc实现pod动态缩放
+#### RC-Pod缩放
 
 - 当前RC和pod情况是
 
-```shell
+```bash
 [root@k8s-master ~]# kubectl get pods,rc
 NAME                         READY   STATUS    RESTARTS   AGE
 pod/mysql-hdg66              1/1     Running   3          24h
@@ -48,19 +46,19 @@ replicationcontroller/myweb   2         2         2       24h
 
 - 增加pod-mysql的副本(RC)数
 
-```shell
+```bash
 [root@k8s-master ~]# kubectl scale rc mysql --replicas=3
 replicationcontroller/mysql scaled
 ```
 
 - 减少pod-mysql的副本(RC)数
 
-```shell
+```bash
 [root@k8s-master ~]# kubectl scale rc mysql --replicas=1
 replicationcontroller/mysql scaled
 ```
 
-### 2.2. Deployment
+### Deployment
 
 Deployment 是一种更高级别的 API 资源对象,为 Pods 和 ReplicaSets 提供声明式的更新能力.它以类似于 `kubectl rolling-update` 的方式更新其底层 ReplicaSet 及其 Pod. 如果需要这种滚动更新功能,推荐使用 Deployment.
 
@@ -74,11 +72,11 @@ Deployments 的典型用例:
 - 使用 Deployment 状态 来判定上线过程是否出现停滞.
 - 清理较旧的不再需要的 ReplicaSet.
 
-#### 创建 Deployment
+#### 创建Deployment
 
 下面是 Deployment 示例.其中创建了一个 ReplicaSet,负责启动三个 nginx Pods:
 
-```shell
+```bash
 # 创建yaml文件
 [root@k8s-master k_base]# vi nginx-deploy.yaml
 apiVersion: apps/v1
@@ -154,7 +152,7 @@ nginx-deploy-559d658b74-hzdr2   1/1     Running   0          11m   172.16.36.106
 
 - 注意Deployment、ReplicaSet和Pod三者的名称关系
 
-```shell
+```bash
 [root@k8s-master k_base]# kubectl get deploy,rs -o wide
 NAME                           READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES         SELECTOR
 deployment.apps/nginx-deploy   3/3     3            3           45m   nginx        nginx:1.18.0   app=nginx
@@ -163,13 +161,13 @@ NAME                                      DESIRED   CURRENT   READY   AGE   CONT
 replicaset.apps/nginx-deploy-67dfd6c8f9   3         3         3       16m   nginx        nginx:1.18.0   app=nginx,pod-template-hash=67dfd6c8f9
 ```
 
-#### 更新 Deployment
+#### 更新Deployment
 
 Deployment 可确保在更新时仅关闭一定数量的 Pods.默认情况下,它确保至少 75% 所需 Pods 在运行(25%为容忍的最大不可用量).更新时不会先删除旧的pod,而是先新建一个pod.新pod运行时,才会删除对应老的pod.一切的前提都是为了满足上述的条件.
 
 备注: 如果需要更新Deployment,最好通过yaml文件更新,这样回滚到任何版本都非常便捷,而且更容易追述.
 
-```shell
+```bash
 # 方式一: 直接修改镜像[不推荐]
 # 执行下面命令后修改对于镜像版本即可, 该方法不会记录命令,通过kubectl rollout history deployment/nginx-deployment 无法查询
 [root@k8s-master k_base]# kubectl edit deploy/nginx-deploy
@@ -265,9 +263,9 @@ deployment "nginx-deploy" successfully rolled out
 deployment "nginx-deploy" successfully rolled out
 ```
 
-#### 回滚 Deployment
+#### 回滚Deployment
 
-```shell
+```bash
 # 回滚到上一个版本
 [root@k8s-master k_base]# kubectl rollout undo deployment/nginx-deploy
 deployment.apps/nginx-deploy rolled back
@@ -293,9 +291,9 @@ nginx-deploy-559d658b74-pgrqv   1/1     Running   0          61s   172.16.36.110
 [root@k8s-master k_base]# kubectl apply -f nginx-deploy-1161.yaml --record
 ```
 
-#### 回退到历史版本
+#### 回退历史版本
 
-```shell
+```bash
 # 查看历史版本
 [root@k8s-master k_base]# kubectl rollout history deploy/nginx-deploy
 deployment.apps/nginx-deploy 
@@ -323,9 +321,9 @@ kubectl rollout undo deployment/nginx-deploy --to-revision=6
 kubectl rollout pause deployment/nginx-deploy
 ```
 
-#### 查看更新详情
+- **查看更新详情**
 
-```shell
+```bash
 [root@k8s-master k_base]# kubectl describe po nginx-deploy-559d658b74-9dgg8
 Labels:       app=nginx
               pod-template-hash=559d658b74
@@ -440,7 +438,7 @@ DaemonSet典型用法:
 
 一个稍微复杂的用法是单独对每种 daemon 类型使用一种DaemonSet.这样有多个 DaemonSet,但具有不同的标识,并且对不同硬件类型具有不同的内存、CPU 要求.
 
-```shell
+```bash
 [root@k8s-master k_base]# kubectl explain ds
 KIND:     DaemonSet
 VERSION:  apps/v1
@@ -515,7 +513,7 @@ fluentd-elasticsearch-pzlpv     1/1     Running            0          108s   172
 
 Job 负责批处理任务,即仅执行一次的任务,它保证批处理任务的一个或多个 Pod 成功结束.
 
-```shell
+```bash
 [root@k8s-master k_base]# kubectl explain job
 KIND:     Job
 VERSION:  batch/v1
@@ -569,7 +567,7 @@ Cron Job 管理基于时间的 Job,即:
 在给你写的时间点调度 Job 运行
 创建周期性运行的 Job,例如: 数据库备份、发送邮件
 
-```shell
+```bash
 [root@k8s-master k_base]# kubectl explain cj
 KIND:     CronJob
 VERSION:  batch/v1beta1
@@ -635,7 +633,7 @@ StatefulSet 中的 Pod 拥有独一无二的身份标识.这个标识基于 Stat
 
 和 Deployment 相同的是,StatefulSet 管理了基于相同容器定义的一组 Pod.但和 Deployment 不同的是,StatefulSet 为它们的每个 Pod 维护了一个固定的 ID.这些 Pod 是基于相同的声明来创建的,但是不能相互替换: 无论怎么调度,每个 Pod 都有一个永久不变的 ID.
 
-使用场景:
+#### 使用场景
 
 - 稳定的、唯一的网络标识符,即Pod重新调度后其PodName和HostName不变[当然IP是会变的]
 - 稳定的、持久的存储,即Pod重新调度后还是能访问到相同的持久化数据,基于PVC实现
@@ -646,7 +644,7 @@ StatefulSet 中的 Pod 拥有独一无二的身份标识.这个标识基于 Stat
 
 如果应用程序不需要任何稳定的标识符或有序的部署、删除或伸缩,则应该使用由一组无状态的副本控制器提供的工作负载来部署应用程序,比如使用 Deployment 或者 ReplicaSet 可能更适用于无状态应用部署需要.
 
-#### 限制
+***限制**
 
 - 给定 Pod 的存储必须由 PersistentVolume(PV) 驱动基于所请求的 storage class 来提供,或者由管理员预先提供.
 - 删除或者收缩 StatefulSet 并不会删除它关联的存储卷.这样做是为了保证数据安全,它通常比自动清除 StatefulSet 所有相关的资源更有价值.
@@ -654,7 +652,7 @@ StatefulSet 中的 Pod 拥有独一无二的身份标识.这个标识基于 Stat
 - 当删除 StatefulSets 时,StatefulSet 不提供任何终止 Pod 的保证.为了实现 StatefulSet 中的 Pod 可以有序和优雅的终止,可以在删除之前将 StatefulSet 缩放为 0.
 - 在默认 Pod 管理策略(OrderedReady) 时使用滚动更新,可能进入需要人工干预才能修复的损坏状态.
 
-#### 有序索引
+***有序索引**
 
 对于具有 N 个副本的 StatefulSet,StatefulSet 中的每个 Pod 将被分配一个整数序号,从 0 到 N-1,该序号在 StatefulSet 上是唯一的.
 
@@ -669,17 +667,17 @@ StatefulSet 中的每个 Pod 根据 StatefulSet 中的名称和 Pod 的序号来
 
 StatefulSet 不应将 pod.Spec.TerminationGracePeriodSeconds 设置为 0.这种做法是不安全的,要强烈阻止.
 
-#### 部署顺序
+***部署顺序**
 
 在下面的 nginx 示例被创建后,会按照 web-0、web-1、web-2 的顺序部署三个 Pod.在 web-0 进入 Running 和 Ready 状态前不会部署 web-1.在 web-1 进入 Running 和 Ready 状态前不会部署 web-2.
 
 如果 web-1 已经处于 Running 和 Ready 状态,而 web-2 尚未部署,在此期间发生了 web-0 运行失败,那么 web-2 将不会被部署,要等到 web-0 部署完成并进入 Running 和 Ready 状态后,才会部署 web-2.
 
-#### 收缩顺序
+***收缩顺序**
 
 如果想将示例中的 StatefulSet 收缩为 replicas=1,首先被终止的是 web-2.在 web-2 没有被完全停止和删除前,web-1 不会被终止.当 web-2 已被终止和删除；但web-1 尚未被终止,如果在此期间发生 web-0 运行失败,那么就不会终止 web-1,必须等到 web-0 进入 Running 和 Ready 状态后才会终止 web-1.
 
-```shell
+```bash
 # 查看StatefulSet说明
 [root@k8s-master k_base]# kubectl explain sts
 KIND:     StatefulSet
@@ -696,9 +694,9 @@ FIELDS:
 ...
 ```
 
-#### StatefulSet实例
+#### STS实例
 
-```shell
+```bash
 [root@k8s-master k_base]# pwd
 /app/kubernetes/k_base
 [root@k8s-master k_base]# cat statefulset.yaml 
@@ -785,7 +783,7 @@ Address 6: 172.16.36.100 172-16-36-100.nginx.default.svc.cluster.local
 Address 7: 172.16.36.96 web-0.nginx.default.svc.cluster.local
 ```
 
-### Horizontal Pod Autoscaling(HPA)
+### HPA
 
 顾名思义, Pod 水平自动缩放,提高集群的整体资源利用率.
 
@@ -800,7 +798,7 @@ Horizontal Pod Autoscaling可以根据指标自动伸缩一个Replication Contro
 - autoscaling/v1: v1版本只支持 cpu
 - autoscaling/v2beta2: v2beta2版本支持 自定义 ,内存 ,但是目前也仅仅是处于beta阶段
 
-#### 指标从哪里来
+#### 指标
 
 Horizontal Pod AutoScaler被实现为一个控制循环,周期由控制器管理器的–Horizontal Pod AutoScaler sync period标志(默认值为15秒)控制.
 
@@ -808,27 +806,27 @@ Horizontal Pod AutoScaler被实现为一个控制循环,周期由控制器管理
 
 对于每个pod的资源度量(如cpu),控制器从horizontalpodautoscaler针对每个pod的资源度量api获取度量.然后,如果设置了目标利用率值,则控制器将利用率值计算为每个pod中容器上等效资源请求的百分比.如果设置了目标原始值,则直接使用原始度量值.然后,控制器获取所有目标pod的利用率平均值或原始值(取决于指定的目标类型),并生成用于缩放所需副本数量的比率.
 
-#### 为什么目前能使用的指标是CPU
+***CPU**
 
 v1的模板可能是大家平时见到最多的也是最简单的,v1版本的HPA只支持一种指标 —— CPU.传统意义上,弹性伸缩最少也会支持CPU与Memory两种指标,为什么在Kubernetes中只放开了CPU呢?其实最早的HPA是计划同时支持这两种指标的,但是实际的开发测试中发现,内存不是一个非常好的弹性伸缩判断条件.因为和CPU不同,很多内存型的应用,并不会因为HPA弹出新的容器而带来内存的快速回收,因为很多应用的内存都要交给语言层面的VM进行管理,也就是内存的回收是由VM的GC来决定的.这就有可能因为GC时间的差异导致HPA在不恰当的时间点震荡,因此在v1的版本中,HPA就只支持了CPU一种指标.
 
-#### HPA与rolling update的区别
+***HPA与rolling update**
 
 目前在kubernetes中,可以通过直接管理复制控制器来执行滚动更新,也可以使用deployment对象来管理底层副本集.HPA只支持后一种方法: HPA绑定到部署对象,设置部署对象的大小,部署负责设置底层副本集的大小.
 
 HPA不能使用复制控制器的直接操作进行滚动更新,即不能将HPA绑定到复制控制器并进行滚动更新(例如,使用Kubectl滚动更新).这不起作用的原因是,当滚动更新创建新的复制控制器时,HPA将不会绑定到新的复制控制器.
 
-#### HPA怎么使用
+#### HPA使用
 
 1.使用kubectl的方式
 
-```shell
+```bash
 kubectl autoscale deployment php-apache --cpu-percent=50 --min=1 --max=10
 ```
 
 2.使用yaml创建
 
-```shell
+```bash
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
@@ -848,12 +846,12 @@ spec:
 
 下载国内示例镜像
 
-```shell
+```bash
 # 在集群所有节点都需要执行[主要是node节点]
 docker pull registry.cn-beijing.aliyuncs.com/google_registry/hpa-example
 ```
 
-```shell
+```bash
 # yaml
 [root@k8s-master monitor]# cat php-apache.yaml 
 apiVersion: apps/v1
@@ -911,7 +909,7 @@ php-apache   Deployment/php-apache   <unknown>/50%   1         10        0      
 
 压测php-apache
 
-```shell
+```bash
 # 创建压测Pod并进入, 先不要退出
 [root@k8s-master monitor]# kubectl run -i --tty load-test --image=busybox /bin/sh
 / # 
