@@ -1,14 +1,16 @@
-# Kubernetes基础之Pod
+# Kubernetes基础之Pod及零宕机部署
+
+## Pod概念
 
 Pod是Kubernetes中创建管理和可部署的最小计算单元，它由一个或多个容器组成，每个Pod还包含了一个Pause容器，Pause容器是Pod的父容器，主要负责僵尸进程的回收管理，通过Pause容器可以使同一个Pod里面的多个容器共享存储、网络、PID、IPC等。
 
-## 使用Pod
+## 定义Pod
 
 Pod 中的容器被自动安排到集群中的同一物理机或虚拟机上，并可以一起进行调度。通常情况下，很少去直接创建Pod单实例，一般是通过Pod控制器（ReplicaSet、Deployment、DaemonSet等）进行创建和管理，并且这些高级资源具有Pod所不具备的很多高级特性（比如：自由伸缩，回滚等）。控制器创建Pod后将Pod调度到集群的节点上，Pod会保持在该节点上运行，直到Pod结束执行、Pod对象被删除、Pod因资源不足而被驱逐或者节点失效为止。
 
 > 说明： 重启 Pod 中的容器不应与重启 Pod 混淆。 Pod 不是进程，而是容器运行的环境。 在被删除之前，Pod 会一直存在。
 
-- **Pod**yaml文件示例
+- **Pod yaml文件示例**
 
 ```bash
 apiVersion: v1       # 必选，API的版本号
@@ -134,13 +136,21 @@ spec:
     # 以上为 Pod 模版
 ```
 
+## 零宕机部署
+
+实现Pod无宕机上下线，需要加入初始化容器（initContainers）、Pod上线接收流量前的健康检查（StartupProbe/LivenessProbe/ReadinessProbe）、Pod下线优雅退出，结合优雅退出流程可以实现deployment零宕机滚动更新。
+
+## 初始化容器
+
+待更新
+
 ## Pod探针
 
 - StartupProbe（1.16版本后）：用于判断容器内应用程序是否已经启动。如果配置了startupProbe，会先禁止其他的探测，直到它成功为止（直到容器程序成功启动为止），成功后会进入其他探针的探测。
 - LivenessProbe：用于探测容器是否运行，如果探测失败，kubelet会根据配置的重启策略进行相应的处理。若没有配置该探针，默认就是success。
 - ReadinessProbe：一般用于探测容器内的程序是否就绪，它的返回值如果为success，那么久代表这个容器已经完成启动，并且程序已经是可以接受流量的状态。
 
-## Pod探针的检测方式
+### Pod探针的检测方式
 
 - ExecAction：在容器内执行一个命令，如果返回值为0，则认为容器健康。
 - TCPSocketAction：通过TCP连接检查容器内的端口是否是通的，如果是通的就认为容器健康。
@@ -180,7 +190,7 @@ spec:
 
 > **特殊情况**：如果遇到容器内程序启动时间太长，超过了`initialDelaySeconds`设定的容器初始化时间，那么健康检查也不会通过，容器会不断被杀掉重启，造成服务无法正常运行。像上面这些情况就需要检测容器内程序是否健康，此时可以使用`startupProbe`。
 
-## 探针检查参数配置
+### 探针检查参数配置
 
 ```bash
 initialDelaySeconds: 10   # 容器启动后且依旧存活，等待10s后开始检测。若不配置，默认为0s
@@ -190,7 +200,7 @@ successThreshold: 1       # 检测连续成功1次后标记Pod就绪
 failureThreshold: 2       # 检测连续失败2次后标记Pod失败
 ```
 
-## StartupProbe实例
+### StartupProbe实例
 
 采用HTTPGetAction探测方式
 
@@ -237,7 +247,7 @@ NAME                   READY   STATUS    RESTARTS      AGE
 startupprobe-httpget   0/1     Running   5 (20s ago)   4m40s
 ```
 
-## LivenessProbe实例
+### LivenessProbe实例
 
 采用ExecAction探测方式
 
@@ -291,7 +301,7 @@ livenessprobe-exec   1/1     Running   1 (21s ago)   91s
 
 > 在这个配置文件中，Pod 中只有一个容器。`periodSeconds`字段指定了 kubelet 应该每 5 秒执行一次存活探测。`initialDelaySeconds`字段告诉 kubelet 在执行第一次探测前应该等待 15 秒。 kubelet 在容器内执行命令`cat /tmp/healthy`来进行探测。 如果命令执行成功并且返回值为 0，kubelet 就会认为这个容器是健康存活的。 如果这个命令返回非 0 值，kubelet 会杀死这个容器并重新启动它。
 
-## ReadinessProbe实例
+### ReadinessProbe实例
 
 采用TCPSocketAction探测方式
 
@@ -346,9 +356,9 @@ Events:
 
 ![kubernetes-pod-life-cycle](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/kubernetes-pod-life-cycle.jpg)
 
-总结生命周期
+总结生命周期，待更新
 
-## Pod退出流程
+### Pod优雅退出
 
 用户删除 Pod。
 Pod 进入 Terminating 状态。
@@ -361,4 +371,4 @@ grace period 超出之后，kubelet 发送 SIGKILL 干掉尚未退出的容器�
 
 <https://insights.thoughtworks.cn/how-to-stop-kubernetes-elegantly/>
 
-总结优雅退出流程
+总结优雅退出流程，待更新
