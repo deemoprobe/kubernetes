@@ -930,7 +930,7 @@ No resources found in default namespace.
 
 ### HPA
 
-顾名思义，Horizontal Pod Autoscaling（Pod 水平自动缩放），可以基于 CPU 利用率自动扩缩 ReplicationController、Deployment、ReplicaSet 和 StatefulSet 中的 Pod 数量。除了 CPU 利用率，也可以基于其他应程序提供的`自定义度量指标`来执行自动扩缩。 Pod 自动扩缩不适用于无法扩缩的对象，比如 DaemonSet。
+顾名思义，Horizontal Pod Autoscaling（Pod 水平自动缩放），可以基于 CPU 利用率自动伸缩 ReplicationController、Deployment、ReplicaSet 和 StatefulSet 中的 Pod 数量。除了 CPU 利用率，也可以基于其他应程序提供的`自定义度量指标`来执行自动扩缩。 Pod 自动扩缩不适用于无法扩缩的对象，比如 DaemonSet。
 
 Pod 水平自动扩缩特性由 Kubernetes API 资源和控制器实现。资源决定了控制器的行为。 控制器会周期性地调整副本控制器或 Deployment 中的副本数量，以使得类似 Pod 平均 CPU 利用率、平均内存利用率这类观测到的度量值与用户所设定的目标值匹配。
 
@@ -949,25 +949,29 @@ HPA两个版本区别:
 
 #### 指标
 
-Pod 水平自动扩缩器的实现是一个控制回路，由控制器管理器的 --horizontal-pod-autoscaler-sync-period 参数指定周期（默认值为 15 秒）。
+Pod 水平自动伸缩器的实现是一个控制回路，由控制器管理器的`--horizontal-pod-autoscaler-sync-period`参数指定周期（默认值为 15 秒）。
 
-每个周期内，控制器管理器根据每个 HorizontalPodAutoscaler 定义中指定的指标查询资源利用率。 控制器管理器可以从资源度量指标 API（按 Pod 统计的资源用量）和自定义度量指标 API（其他指标）获取度量值。
+每个周期内，控制器管理器根据每个`HorizontalPodAutoscaler`定义中指定的指标查询资源利用率。控制器管理器可以从资源度量指标 API（按 Pod 统计的资源用量）和自定义度量指标 API（其他指标）获取度量值。
 
-- 对于按 Pod 统计的资源指标（如 CPU），控制器从资源指标 API 中获取每一个 HorizontalPodAutoscaler 指定的 Pod 的度量值，如果设置了目标使用率， 控制器获取每个 Pod 中的容器资源使用情况，并计算资源使用率。 如果设置了 target 值，将直接使用原始数据（不再计算百分比）。 接下来，控制器根据平均的资源使用率或原始值计算出扩缩的比例，进而计算出目标副本数。
-- 如果 Pod 使用自定义指示，控制器机制与资源指标类似，区别在于自定义指标只使用 原始值，而不是使用率。
-- 如果 Pod 使用对象指标和外部指标（每个指标描述一个对象信息）。 这个指标将直接根据目标设定值相比较，并生成一个上面提到的扩缩比例。 在 autoscaling/v2beta2 版本 API 中，这个指标也可以根据 Pod 数量平分后再计算。
+- 对于按 Pod 统计的资源指标（如 CPU），控制器从资源指标 API 中获取每一个`HorizontalPodAutoscaler`指定的 Pod 的度量值，如果设置了目标使用率，控制器获取每个 Pod 中的容器资源使用情况，并计算资源使用率。 如果设置了 target 值，将直接使用原始数据（不再计算百分比）。 接下来，控制器根据平均的资源使用率或原始值计算出扩缩的比例，进而计算出目标副本数。
+- 如果 Pod 使用自定义指标，控制器机制与资源指标类似，区别在于自定义指标只使用原始值，而不是使用率。
+- 如果 Pod 使用对象指标和外部指标（每个指标描述一个对象信息）。这个指标将直接根据目标设定值相比较，并生成一个上面提到的扩缩比例。在`autoscaling/v2beta2`版本 API 中，这个指标也可以根据 Pod 数量平分后再计算。
+
+通常情况下，控制器将从一系列的聚合API（metrics.k8s.io、custom.metrics.k8s.io 和 external.metrics.k8s.io）中获取度量值。`metrics.k8s.io` API 通常由 Metrics 服务器（需要提前启动）提供。
 
 #### HPA使用
 
-1.使用kubectl的方式
+1.使用kubectl
 
 ```bash
+# 自动伸缩deploy/php-apache，目标CPU使用率50%，deploy副本数在1~10之间
 kubectl autoscale deployment php-apache --cpu-percent=50 --min=1 --max=10
 ```
 
 2.使用yaml创建
 
 ```bash
+# 同上
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
@@ -988,13 +992,13 @@ spec:
 下载国内示例镜像
 
 ```bash
-# 在集群所有节点都需要执行[主要是node节点]
+# 集群所有可调度Pod的节点先获取要使用的hpa示例镜像
 docker pull registry.cn-beijing.aliyuncs.com/google_registry/hpa-example
 ```
 
 ```bash
 # yaml
-[root@k8s-master monitor]# cat php-apache.yaml 
+[root@k8s-master01 ~]# vim php-apache.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1012,6 +1016,7 @@ spec:
       containers:
       - name: php-apache
         image: registry.cn-beijing.aliyuncs.com/google_registry/hpa-example
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
         resources:
@@ -1019,6 +1024,7 @@ spec:
             cpu: 500m
           requests:
             cpu: 200m
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -1030,65 +1036,84 @@ spec:
   - port: 80
   selector:
     hpa: php-apache
-# 启动
-[root@k8s-master monitor]# kubectl apply -f php-apache.yaml 
+[root@k8s-master01 ~]# kubectl apply -f php-apache.yaml 
 deployment.apps/php-apache created
 service/php-apache created
-# 查看
-[root@k8s-master monitor]# kubectl get svc,deploy,po | grep php
-service/php-apache                                               ClusterIP      192.168.160.106   <none>          80/TCP                       108s
-deployment.apps/php-apache                                               1/1     1            1           3m31s
-pod/php-apache-544bfd4f54-77rb6                                       1/1     Running   0          3m31s
+[root@k8s-master01 ~]# kubectl get deployments.apps 
+NAME         READY   UP-TO-DATE   AVAILABLE   AGE
+php-apache   1/1     1            1           9s
 # 创建HPA
 # 当pod中CPU使用率达50%就扩容.最小1个,最大10个
-[root@k8s-master monitor]# kubectl autoscale deploy php-apache --cpu-percent=50 --min=1 --max=10
+[root@k8s-master01 ~]# kubectl autoscale deployment php-apache --cpu-percent=50 --min=1 --max=10
 horizontalpodautoscaler.autoscaling/php-apache autoscaled
-[root@k8s-master monitor]# kubectl get hpa
-NAME         REFERENCE               TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
-php-apache   Deployment/php-apache   <unknown>/50%   1         10        0          12s
+[root@k8s-master01 ~]# kubectl get hpa
+NAME         REFERENCE               TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/50%    1         10        1          18s
 ```
 
-压测php-apache
+***压测php-apache**
 
 ```bash
 # 创建压测Pod并进入, 先不要退出
-[root@k8s-master monitor]# kubectl run -i --tty load-test --image=busybox /bin/sh
+[root@k8s-master01 ~]# kubectl run -it load-test --image=busybox /bin/sh
 / # 
 # 另起一窗口可查看到pod在运行
-[root@k8s-master ~]# kubectl get po | grep load
-load-test                                                         1/1     Running   0          89s
-# 在load-test继续中操作
-/ # while true; do wget -q -O- http://php-apache.dev.svc.cluster.local; done
-OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!Session ended., resume using 'kubectl attach load-test -c load-test -i -t' command when the pod is running
-# 负载飙升, 副本数增多
-[root@k8s-master ~]# kubectl get hpa
+[root@k8s-master01 ~]# kubectl get po | grep load
+load-test                     1/1     Running   0             26s
+# 在load-test继续中操作，连续访问php-apache的Service
+/ # while true; do wget -q -O- http://php-apache.default.svc.cluster.local; done
+OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!
+# 一分钟左右，在另外一个窗口可看到，负载飙升, 副本数增多
+[root@k8s-master01 ~]# kubectl get hpa
 NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
-php-apache   Deployment/php-apache   250%/50%   1         10        5          11m
+php-apache   Deployment/php-apache   254%/50%   1         10        3          21m
 # 自动扩容
-[root@k8s-master ~]# kubectl get po | grep php
-php-apache-544bfd4f54-77rb6                                       1/1     Running   0          20m
-php-apache-544bfd4f54-hvh96                                       1/1     Running   0          5m10s
-php-apache-544bfd4f54-nqrcz                                       1/1     Running   0          4m54s
-php-apache-544bfd4f54-qr48z                                       1/1     Running   0          5m10s
-php-apache-544bfd4f54-xzpbq                                       1/1     Running   0          5m10s
+[root@k8s-master01 ~]# kubectl get deploy,rs,po
+NAME                         READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/php-apache   6/6     6            6           23m
+
+NAME                                    DESIRED   CURRENT   READY   AGE
+replicaset.apps/php-apache-7db9c95858   6         6         6       23m
+
+NAME                              READY   STATUS    RESTARTS      AGE
+pod/php-apache-7db9c95858-6wrp2   1/1     Running   0             32s
+pod/php-apache-7db9c95858-7dbjv   1/1     Running   0             10m
+pod/php-apache-7db9c95858-cfwrk   1/1     Running   0             32s
+pod/php-apache-7db9c95858-ksbgh   1/1     Running   0             47s
+pod/php-apache-7db9c95858-m9mtn   1/1     Running   0             47s
+pod/php-apache-7db9c95858-znczt   1/1     Running   0             32s
+
+# 停止压测
+
+# Ctrl+C停止在跑的循环
+/ # while true; do wget -q -O- http://php-apache.default.svc.cluster.local; done
+OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!.<省略很多输出>..!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!^C
 
 # 停止压测后负载降下来
-[root@k8s-master ~]# kubectl get hpa
+[root@k8s-master01 ~]# kubectl get hpa
 NAME         REFERENCE               TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-php-apache   Deployment/php-apache   0%/50%    1         10        5          15m
-[root@k8s-master ~]# kubectl get deploy php-apache
-NAME         READY   UP-TO-DATE   AVAILABLE   AGE
-php-apache   5/5     5            5           16m
+php-apache   Deployment/php-apache   0%/50%    1         10        6          24m
 
-# 再过几分钟发现负载降下来并且副本数也降了
-[root@k8s-master ~]# kubectl get po | grep php
-php-apache-544bfd4f54-77rb6                                       1/1     Running   0          22m
-[root@k8s-master ~]# kubectl get deploy php-apache
-NAME         READY   UP-TO-DATE   AVAILABLE   AGE
-php-apache   1/1     1            1           22m
-[root@k8s-master ~]# kubectl get hpa
+# 再过几分钟副本数也降了
+[root@k8s-master01 ~]# kubectl get hpa
 NAME         REFERENCE               TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-php-apache   Deployment/php-apache   0%/50%    1         10        1          18m
+php-apache   Deployment/php-apache   0%/50%    1         10        1          29m
+[root@k8s-master01 ~]# kubectl get deploy,rs,po
+NAME                         READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/php-apache   1/1     1            1           31m
+
+NAME                                    DESIRED   CURRENT   READY   AGE
+replicaset.apps/php-apache-7db9c95858   1         1         1       31m
+
+NAME                              READY   STATUS    RESTARTS      AGE
+pod/php-apache-7db9c95858-7dbjv   1/1     Running   0             18m
 ```
 
 > 说明:停止压测，pod数量也不会立即降下来.而是过段时间后才会慢慢降下来.这是为了防止由于网络原因或者间歇性流量突增、突降，导致pod回收太快后面流量上来后Pod数量不够.
+
+***测试V2版本其他指标**
+
+```bash
+[root@k8s-master01 ~]# vim hpa-v2.yaml
+
+```
