@@ -8,7 +8,7 @@ Ingress 可以提供负载均衡、SSL 和基于名称的虚拟托管.通过Ingr
 
 > 说明:必须具有 Ingress 控制器[例如 Nginx-Ingress-Controller]才能满足 Ingress 的要求.仅创建 Ingress 资源无效.
 
-## 1. Ingress原理
+## Ingress原理
 
 Ingress 公开了从集群外部到集群内 services 的 HTTP 和 HTTPS 路由. 流量路由由 Ingress 资源上定义的规则控制.
 
@@ -22,7 +22,7 @@ Ingress 不会公开任意端口或协议.若将 HTTP 和 HTTPS 以外的服务�
 
 ![Ingress-Nginx](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/Ingress-Nginx.jpg)
 
-## 2. 部署Helm 3.4
+## 部署Helm 3.4
 
 helm通过打包的方式,支持发布的版本管理和控制,很大程度上简化了Kubernetes应用的部署和管理.
 
@@ -49,7 +49,7 @@ NAME    URL
 apphub  https://apphub.aliyuncs.com
 ```
 
-## 3. Helm部署 Nginx-Ingress-Controller
+## Helm部署 Nginx-Ingress-Controller
 
 ```shell
 # 切换到dev这个namespace下
@@ -315,11 +315,11 @@ nginx-ingress-nginx-ingress-controller-default-backend   ClusterIP      192.168.
 
 ![20210111153621](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210111153621.png)
 
-## 4. Nginx-Ingress综合实例
+## Nginx-Ingress综合实例
 
 通过部署两套Service来实现: HTTP代理访问/HTTPS代理访问/BasicAuth认证/Rewrite重写验证, 并为之分配不同的域名进行区分.
 
-### 4.1. 创建deploy-svc1
+### 创建deploy-svc1
 
 ```shell
 [root@k8s-master ingress]# vi deploy-svc1.yaml
@@ -400,7 +400,7 @@ myapp-deploy1-6c468d6b6c-mzqwd
 myapp-deploy1-6c468d6b6c-cq44z
 ```
 
-### 4.2. 创建deploy-svc2
+### 创建deploy-svc2
 
 ```shell
 [root@k8s-master ingress]# vi deploy-svc2.yaml 
@@ -469,7 +469,7 @@ myapp-deploy2-5fffdcccd5-vpcj9
 myapp-deploy2-5fffdcccd5-25qz4
 ```
 
-### 4.3. HTTP代理访问
+### HTTP代理访问
 
 ```shell
 [root@k8s-master ingress]# vi ingress-http.yaml
@@ -535,7 +535,7 @@ Hello MyApp | Version: v2 | <a href="hostname.html">Pod Name</a>
 
 > 说明:实际环境中是对节点的外部IP进行访问, 只需要为节点分配好对应的外部IP即可, 然后在物理机上配置好hosts域名解析, 浏览器访问即可
 
-#### 4.3.1. 本地Windows系统下浏览器访问http
+#### 本地Windows系统下浏览器访问http
 
 编辑文件 `C:\WINDOWS\System32\drivers\etc\hosts`
 
@@ -574,9 +574,9 @@ myapp-deploy2-5fffdcccd5-25qz4                                    1/1     Runnin
 myapp-deploy2-5fffdcccd5-vpcj9                                    1/1     Running   1          17h
 ```
 
-### 4.4. HTTPS代理访问
+### HTTPS代理访问
 
-#### 4.4.1. 创建SSL证书
+#### 创建SSL证书
 
 ```shell
 [root@k8s-master kubernetes]# mkdir cert;cd cert
@@ -592,7 +592,7 @@ tls.crt  tls.key
 secret/tls-secret created
 ```
 
-#### 4.4.2. 创建ingress https
+#### 创建ingress https
 
 ```shell
 [root@k8s-master cert]# cd ../ingress/
@@ -633,7 +633,7 @@ nginx-http    <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.168.43
 nginx-https   <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.168.43.20   80, 443   53s
 ```
 
-#### 4.4.3. 本地Windows系统下浏览器访问https
+#### 本地Windows系统下浏览器访问https
 
 > 编辑文件 C:\WINDOWS\System32\drivers\etc\hosts 添加对应的域名信息, 由于我用的和上面的http映射一样, 所以直接使用即可
 
@@ -663,9 +663,9 @@ myapp-deploy2-5fffdcccd5-25qz4                                    1/1     Runnin
 myapp-deploy2-5fffdcccd5-vpcj9                                    1/1     Running   1          17h
 ```
 
-### 4.5. Nginx-Ingress BasicAuth认证
+### Nginx-Ingress BasicAuth认证
 
-#### 4.5.1. 准备
+#### 准备
 
 ```shell
 [root@k8s-master ingress]# yum install -y httpd
@@ -707,7 +707,7 @@ metadata:
 type: Opaque
 ```
 
-#### 4.5.2. 创建ingress
+#### 创建ingress
 
 ```shell
 [root@k8s-master ingress]# vi nginx-ingress-basicauth.yaml
@@ -741,7 +741,7 @@ nginx-http          <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.
 nginx-https         <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.168.43.20   80, 443   19m
 ```
 
-#### 4.5.3. 浏览器访问auth
+#### 浏览器访问auth
 
 编辑文件 `C:\WINDOWS\System32\drivers\etc\hosts`
 
@@ -758,7 +758,7 @@ nginx-https         <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.
 ![20210112104413](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112104413.png)
 ![20210112104439](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112104439.png)
 
-### 4.6. Nginx-Ingress Rewrite重写验证
+### Nginx-Ingress Rewrite重写验证
 
 重写可以使用以下注解控制:
 
@@ -799,7 +799,7 @@ nginx-https         <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.
 rewrite             <none>   rewrite.nginx-ingress.com                                      80        12s
 ```
 
-#### 4.6.1. 浏览器访问rewrite
+#### 浏览器访问rewrite
 
 编辑文件 `C:\WINDOWS\System32\drivers\etc\hosts`
 
@@ -816,7 +816,7 @@ rewrite             <none>   rewrite.nginx-ingress.com                          
 ![20210112105652](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112105652.png)
 ![20210112110219](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112110219.png)
 
-#### 4.6.2. CentOS本地系统访问
+#### CentOS本地系统访问
 
 ```shell
 # 先添加本地hosts
