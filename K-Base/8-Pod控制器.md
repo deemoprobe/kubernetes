@@ -1114,6 +1114,5 @@ pod/php-apache-7db9c95858-7dbjv   1/1     Running   0             18m
 ***测试V2版本其他指标**
 
 ```bash
-[root@k8s-master01 ~]# vim hpa-v2.yaml
-
+# 暂时预留，日后更新
 ```
