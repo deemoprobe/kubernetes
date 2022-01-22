@@ -1,14 +1,16 @@
 # Kubernetes网络之Ingress
 
-> 本文通过Helm部署Nginx-Ingress-Controller.
+## 概念
 
-Ingress 是对集群中服务的外部访问进行管理的 API 对象,典型的访问方式是 HTTP和HTTPS.
+> 本文通过Helm部署Nginx Ingress Controller
 
-Ingress 可以提供负载均衡、SSL 和基于名称的虚拟托管.通过Ingress Controller实现Pod的负载均衡, 与只支持4层的Service不同, Ingress支持TCP/UDP 4层和HTTP 7层.使用场景比Service要广泛.
+- `Ingress`是集群外部访问Kubernetes的一个入口，将外部的请求转发到集群内不同的 Service 上，相当于 nginx、haproxy 等负载均衡器
+- `Ingress Controller`可以理解为一个监听器，通过不断地监听 kube-apiserver，实时的感知后端 Service、Pod 的变化，当得到这些信息变化后，Ingress Controller 再结合 Ingress 的配置，更新反向代理负载均衡器，达到服务发现的作用。
+- `NGINX Ingress Controller`是使用 Kubernetes Ingress 资源对象构建的，用 ConfigMap 来存储 Nginx 配置的一种 Ingress Controller 实现。要使用 Ingress 对外暴露服务，就需要提前安装一个 Ingress Controller，常见的就是`NGINX Ingress Controller`，生产环境一般需要部署多个`ingress-nginx-controller`实例实现高可用（不要部署在master节点，至少部署在3个独立的Node节点）。
 
-> 说明:必须具有 Ingress 控制器[例如 Nginx-Ingress-Controller]才能满足 Ingress 的要求.仅创建 Ingress 资源无效.
+> 官方列举出了多种`Ingress Controller`：<https://kubernetes.io/zh/docs/concepts/services-networking/ingress-controllers/>
 
-## Ingress原理
+## Ingress图解
 
 Ingress 公开了从集群外部到集群内 services 的 HTTP 和 HTTPS 路由. 流量路由由 Ingress 资源上定义的规则控制.
 
@@ -22,7 +24,7 @@ Ingress 不会公开任意端口或协议.若将 HTTP 和 HTTPS 以外的服务�
 
 ![Ingress-Nginx](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/Ingress-Nginx.jpg)
 
-## 部署Helm 3.4
+## 部署Helm3.x
 
 helm通过打包的方式,支持发布的版本管理和控制,很大程度上简化了Kubernetes应用的部署和管理.
 
@@ -31,80 +33,245 @@ Helm本质就是让k8s的应用管理(Deployment、Service等)可配置,能动�
 > 说明: Helm3.x 版本已经不需要再安装tiller(之前老版本中的Helm仓库的服务端), 直接安装配置好仓库就可以使用了
 
 ```shell
-# 在官方(https://github.com/helm/helm/releases)下载想要的的版本, 当前(2021-01-11)最新稳定版 V3.4.2
+# 在官方(https://github.com/helm/helm/releases)下载想要的的版本, 当前(2022-01-21)最新稳定版 V3.7.2
 # 解压并配置
-[root@k8s-master ~]# tar -zxvf helm-v3.4.2-linux-amd64.tar.gz
-[root@k8s-master ~]# mv linux-amd64/helm /usr/local/bin/helm
-[root@k8s-master ~]# helm version
-version.BuildInfo{Version:"v3.4.2", GitCommit:"23dd3af5e19a02d4f4baa5b2f242645a1a3af629", GitTreeState:"clean", GoVersion:"go1.14.13"}
-# 添加阿里仓库
-[root@k8s-master ~]# helm repo add apphub https://apphub.aliyuncs.com
-"apphub" has been added to your repositories
-[root@k8s-master ~]# helm repo update
+[root@k8s-master01 ~]# tar -zxvf helm-v3.7.2-linux-amd64.tar.gz 
+linux-amd64/
+linux-amd64/helm
+linux-amd64/LICENSE
+linux-amd64/README.md
+[root@k8s-master01 ~]# mv linux-amd64/helm /usr/local/bin/helm
+[root@k8s-master01 ~]# helm version
+version.BuildInfo{Version:"v3.7.2", GitCommit:"663a896f4a815053445eec4153677ddc24a0a361", GitTreeState:"clean", GoVersion:"go1.16.10"}
+# 添加仓库
+[root@k8s-master01 ingress]# helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+"ingress-nginx" has been added to your repositories
+[root@k8s-master01 ingress]# helm repo update
 Hang tight while we grab the latest from your chart repositories...
-...Successfully got an update from the "apphub" chart repository
+...Successfully got an update from the "ingress-nginx" chart repository
 Update Complete. ⎈Happy Helming!⎈
-[root@k8s-master ~]# helm repo list
-NAME    URL                        
-apphub  https://apphub.aliyuncs.com
+[root@k8s-master01 ingress]# helm repo list
+NAME            URL                                       
+ingress-nginx   https://kubernetes.github.io/ingress-nginx
 ```
 
-## Helm部署 Nginx-Ingress-Controller
+## Helm部署 Nginx-Ingress
 
 ```shell
-# 切换到dev这个namespace下
-[root@k8s-master ~]# kubens dev
-Context "kubernetes-admin@kubernetes" modified.
-Active namespace is "dev".
-[root@k8s-master ~]# kubens -c
-dev
-[root@k8s-master ~]# kubectl get po
-No resources found in dev namespace.
-# 查找Ingress资源包
-[root@k8s-master ~]# helm search repo apphub | grep ingress
-apphub/aws-alb-ingress-controller       0.1.13          v1.1.5                          A Helm chart for AWS ALB Ingress Controller       
-apphub/gce-ingress                      1.2.0           1.4.0                           A GCE Ingress Controller                          
-apphub/haproxy-ingress                  0.0.22          0.7.2                           Ingress controller implementation for haproxy l...
-apphub/ingressmonitorcontroller         1.0.48          1.0.47                          IngressMonitorController chart that runs on kub...
-apphub/nginx-ingress                    1.30.3          0.28.0                          An nginx Ingress controller that uses ConfigMap...
-apphub/nginx-ingress-controller         5.3.4           0.29.0                          Chart for the nginx Ingress controller            
-[root@k8s-master kubernetes]# helm install nginx-ingress apphub/nginx-ingress-controller
-NAME: nginx-ingress
-LAST DEPLOYED: Mon Jan 11 13:50:42 2021
-NAMESPACE: dev
+# 查看nginx-ingress资源包，显示为最新版
+[root@k8s-master01 ingress]# helm search repo ingress-nginx
+NAME                            CHART VERSION   APP VERSION     DESCRIPTION                                       
+ingress-nginx/ingress-nginx     4.0.16          1.1.1           Ingress controller for Kubernetes using NGINX a...
+# 1.获取最新版本压缩包
+[root@k8s-master01 ingress]# helm pull ingress-nginx/ingress-nginx
+# 2.获取最新版本并解压，不保留压缩包
+[root@k8s-master01 ingress]# helm pull ingress-nginx/ingress-nginx --untar
+# 3.获取指定版本并解压，不保留压缩包
+[root@k8s-master01 ingress]# helm pull ingress-nginx/ingress-nginx --version=4.0.16 --untar
+# 本实验采用第3种方式获取了ingress-nginx-4.0.16.tgz压缩包解压后的文件
+
+# 自定义为自己在阿里云的镜像和更改部分Chart配置，存放在文件中
+[root@k8s-master01 ingress]# vim ingress-custom.yaml
+controller:
+  name: controller
+  image:
+    repository: registry.cn-hangzhou.aliyuncs.com/deemoprobe/ingress-nginx-controller
+    tag: "1.1.1"
+    digest: sha256:e16123f3932f44a2bba8bc3cf1c109cea4495ee271d6d16ab99228b58766d3ab
+
+  dnsPolicy: ClusterFirstWithHostNet
+
+  hostNetwork: true # 开启hostNetwork模式
+
+  publishService:  # hostNetwork 模式下设置为false，通过节点IP地址上报ingress status数据
+    enabled: false
+
+  # 是否需要处理不带 ingressClass 注解或者 ingressClassName 属性的 Ingress 对象
+  # 设置为 true 会在控制器启动参数中新增一个 --watch-ingress-without-class 标注
+  watchIngressWithoutClass: false
+
+  kind: DaemonSet
+
+  tolerations:   # kubeadm 安装的集群默认情况下master是有污点，需要容忍这个污点才可以部署
+  - key: "node-role.kubernetes.io/master"  # 生产环境不建议部署在master节点
+    operator: "Equal"
+    effect: "NoSchedule"
+
+  nodeSelector:
+    ingress: "true"  # 选择标签为ingress=true的节点进行部署
+
+  service:  # HostNetwork 模式不需要创建service
+    enabled: false
+
+  admissionWebhooks: # 强烈建议开启 admission webhook
+    enabled: true
+    createSecretJob:
+      resources:
+        limits:
+          cpu: 10m
+          memory: 20Mi
+        requests:
+          cpu: 10m
+          memory: 20Mi
+    patchWebhookJob:
+      resources:
+        limits:
+          cpu: 10m
+          memory: 20Mi
+        requests:
+          cpu: 10m
+          memory: 20Mi
+    patch:
+      enabled: true
+      image:
+        repository: registry.cn-hangzhou.aliyuncs.com/deemoprobe/kube-webhook-certgen
+        tag: "1.1.1"
+        digest: sha256:23a03c9c381fba54043d0f6148efeaf4c1ca2ed176e43455178b5c5ebf15ad70
+
+defaultBackend:  # 启用并配置默认后端
+  enabled: true
+  name: defaultbackend
+  image:
+    repository: registry.cn-hangzhou.aliyuncs.com/deemoprobe/defaultbackend-amd64
+    tag: "1.5"
+    digest: sha256:5c51a4d6c2669c4fe765497153872ec6b0b12ce65f5cbadad6869c25d5197b3a
+# 给想要部署ingress-nginx-controller的节点打上标签
+[root@k8s-master01 ingress]# kubectl label node k8s-node01 ingress=true
+[root@k8s-master01 ingress]# kubectl label node k8s-node02 ingress=true
+[root@k8s-master01 ingress]# kubectl label node k8s-master01 ingress=true
+
+# 查看Chart目录树构造，通常建议自定义文件去覆盖Chart values.yaml中的配置
+# 可以根据目录树了解Chart构建时文件的分布和详细内容阅读
+[root@k8s-master01 ingress]# tree ingress-nginx
+ingress-nginx
+├── CHANGELOG.md
+├── Chart.yaml
+├── ci
+│   ├── controller-custom-ingressclass-flags.yaml
+│   ├── daemonset-customconfig-values.yaml
+│   ├── daemonset-customnodeport-values.yaml
+│   ├── daemonset-extra-modules.yaml
+│   ├── daemonset-headers-values.yaml
+│   ├── daemonset-internal-lb-values.yaml
+│   ├── daemonset-nodeport-values.yaml
+│   ├── daemonset-podannotations-values.yaml
+│   ├── daemonset-tcp-udp-configMapNamespace-values.yaml
+│   ├── daemonset-tcp-udp-values.yaml
+│   ├── daemonset-tcp-values.yaml
+│   ├── deamonset-default-values.yaml
+│   ├── deamonset-metrics-values.yaml
+│   ├── deamonset-psp-values.yaml
+│   ├── deamonset-webhook-and-psp-values.yaml
+│   ├── deamonset-webhook-values.yaml
+│   ├── deployment-autoscaling-behavior-values.yaml
+│   ├── deployment-autoscaling-values.yaml
+│   ├── deployment-customconfig-values.yaml
+│   ├── deployment-customnodeport-values.yaml
+│   ├── deployment-default-values.yaml
+│   ├── deployment-extra-modules.yaml
+│   ├── deployment-headers-values.yaml
+│   ├── deployment-internal-lb-values.yaml
+│   ├── deployment-metrics-values.yaml
+│   ├── deployment-nodeport-values.yaml
+│   ├── deployment-podannotations-values.yaml
+│   ├── deployment-psp-values.yaml
+│   ├── deployment-tcp-udp-configMapNamespace-values.yaml
+│   ├── deployment-tcp-udp-values.yaml
+│   ├── deployment-tcp-values.yaml
+│   ├── deployment-webhook-and-psp-values.yaml
+│   ├── deployment-webhook-resources-values.yaml
+│   └── deployment-webhook-values.yaml
+├── OWNERS
+├── README.md
+├── README.md.gotmpl
+├── templates
+│   ├── admission-webhooks
+│   │   ├── job-patch
+│   │   │   ├── clusterrolebinding.yaml
+│   │   │   ├── clusterrole.yaml
+│   │   │   ├── job-createSecret.yaml
+│   │   │   ├── job-patchWebhook.yaml
+│   │   │   ├── psp.yaml
+│   │   │   ├── rolebinding.yaml
+│   │   │   ├── role.yaml
+│   │   │   └── serviceaccount.yaml
+│   │   └── validating-webhook.yaml
+│   ├── clusterrolebinding.yaml
+│   ├── clusterrole.yaml
+│   ├── controller-configmap-addheaders.yaml
+│   ├── controller-configmap-proxyheaders.yaml
+│   ├── controller-configmap-tcp.yaml
+│   ├── controller-configmap-udp.yaml
+│   ├── controller-configmap.yaml
+│   ├── controller-daemonset.yaml
+│   ├── controller-deployment.yaml
+│   ├── controller-hpa.yaml
+│   ├── controller-ingressclass.yaml
+│   ├── controller-keda.yaml
+│   ├── controller-poddisruptionbudget.yaml
+│   ├── controller-prometheusrules.yaml
+│   ├── controller-psp.yaml
+│   ├── controller-rolebinding.yaml
+│   ├── controller-role.yaml
+│   ├── controller-serviceaccount.yaml
+│   ├── controller-service-internal.yaml
+│   ├── controller-service-metrics.yaml
+│   ├── controller-servicemonitor.yaml
+│   ├── controller-service-webhook.yaml
+│   ├── controller-service.yaml
+│   ├── default-backend-deployment.yaml
+│   ├── default-backend-hpa.yaml
+│   ├── default-backend-poddisruptionbudget.yaml
+│   ├── default-backend-psp.yaml
+│   ├── default-backend-rolebinding.yaml
+│   ├── default-backend-role.yaml
+│   ├── default-backend-serviceaccount.yaml
+│   ├── default-backend-service.yaml
+│   ├── dh-param-secret.yaml
+│   ├── _helpers.tpl
+│   ├── NOTES.txt
+│   └── _params.tpl
+└── values.yaml
+
+4 directories, 84 files
+
+[root@k8s-master01 ingress]# cd ingress-nginx/
+# 使用ingress-custom.yaml覆盖Chart中values.yaml的对应字段值，创建ingress-nginx-controller
+[root@k8s-master01 ingress-nginx]# helm install ingress-nginx . -n ingress-nginx -f ../ingress-custom.yaml
+NAME: ingress-nginx
+LAST DEPLOYED: Sat Jan 22 11:00:02 2022
+NAMESPACE: ingress-nginx
 STATUS: deployed
 REVISION: 1
 TEST SUITE: None
 NOTES:
-** Please be patient while the chart is being deployed **
-
-The nginx-ingress controller has been installed.
+The ingress-nginx controller has been installed.
 It may take a few minutes for the LoadBalancer IP to be available.
-You can watch the status by running 'kubectl --namespace dev get services -o wide -w nginx-ingress-nginx-ingress-controller'
+You can watch the status by running 'kubectl --namespace ingress-nginx get services -o wide -w ingress-nginx-controller'
 
 An example Ingress that makes use of the controller:
-
-  apiVersion: extensions/v1beta1
+  apiVersion: networking.k8s.io/v1
   kind: Ingress
   metadata:
-    annotations:
-      kubernetes.io/ingress.class: nginx
     name: example
     namespace: foo
   spec:
+    ingressClassName: nginx
     rules:
       - host: www.example.com
         http:
           paths:
             - backend:
-                serviceName: exampleService
-                port: 80
+                service:
+                  name: exampleService
+                  port:
+                    number: 80
               path: /
     # This section is only required if TLS is to be enabled for the Ingress
     tls:
-        - hosts:
-            - www.example.com
-          secretName: example-tls
+      - hosts:
+        - www.example.com
+        secretName: example-tls
 
 If TLS is enabled for the Ingress, a Secret containing the certificate and key must also be provided:
 
@@ -117,130 +284,27 @@ If TLS is enabled for the Ingress, a Secret containing the certificate and key m
     tls.crt: <base64 encoded cert>
     tls.key: <base64 encoded key>
   type: kubernetes.io/tls
-# 安装提示查看services
-[root@k8s-master manifests]# kubectl --namespace dev get services -o wide -w nginx-ingress-nginx-ingress-controller
-NAME                                     TYPE           CLUSTER-IP       EXTERNAL-IP     PORT(S)                      AGE   SELECTOR
-nginx-ingress-nginx-ingress-controller   LoadBalancer   192.168.120.98   172.42.42.101   80:31051/TCP,443:30469/TCP   80m   app=nginx-ingress-controller,component=controller,release=nginx-ingress
-# 以YAML形式查看配置
-[root@k8s-master manifests]# kubectl get svc nginx-ingress-nginx-ingress-controller -o yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    meta.helm.sh/release-name: nginx-ingress
-    meta.helm.sh/release-namespace: dev
-  creationTimestamp: "2021-01-11T05:50:43Z"
-  labels:
-    app: nginx-ingress-controller
-    app.kubernetes.io/managed-by: Helm
-    chart: nginx-ingress-controller-5.3.4
-    component: controller
-    heritage: Helm
-    release: nginx-ingress
-  managedFields:
-  - apiVersion: v1
-    fieldsType: FieldsV1
-    fieldsV1:
-      f:metadata:
-        f:annotations:
-          .: {}
-          f:meta.helm.sh/release-name: {}
-          f:meta.helm.sh/release-namespace: {}
-        f:labels:
-          .: {}
-          f:app: {}
-          f:app.kubernetes.io/managed-by: {}
-          f:chart: {}
-          f:component: {}
-          f:heritage: {}
-          f:release: {}
-      f:spec:
-        f:externalTrafficPolicy: {}
-        f:ports:
-          .: {}
-          k:{"port":80,"protocol":"TCP"}:
-            .: {}
-            f:name: {}
-            f:port: {}
-            f:protocol: {}
-            f:targetPort: {}
-          k:{"port":443,"protocol":"TCP"}:
-            .: {}
-            f:name: {}
-            f:port: {}
-            f:protocol: {}
-            f:targetPort: {}
-        f:selector:
-          .: {}
-          f:app: {}
-          f:component: {}
-          f:release: {}
-        f:sessionAffinity: {}
-        f:type: {}
-    manager: Go-http-client
-    operation: Update
-    time: "2021-01-11T05:50:43Z"
-  - apiVersion: v1
-    fieldsType: FieldsV1
-    fieldsV1:
-      f:status:
-        f:loadBalancer:
-          f:ingress: {}
-    manager: controller
-    operation: Update
-    time: "2021-01-11T06:19:47Z"
-  name: nginx-ingress-nginx-ingress-controller
-  namespace: dev
-  resourceVersion: "755241"
-  selfLink: /api/v1/namespaces/dev/services/nginx-ingress-nginx-ingress-controller
-  uid: 279f27eb-0b77-4693-a0c5-4e77633acd86
-spec:
-  clusterIP: 192.168.120.98
-  externalTrafficPolicy: Cluster
-  ports:
-  - name: http
-    nodePort: 31051
-    port: 80
-    protocol: TCP
-    targetPort: http
-  - name: https
-    nodePort: 30469
-    port: 443
-    protocol: TCP
-    targetPort: https
-  selector:
-    app: nginx-ingress-controller
-    component: controller
-    release: nginx-ingress
-  sessionAffinity: None
-  type: LoadBalancer
-status:
-  loadBalancer:
-    ingress:
-    - ip: 172.42.42.101
-[root@k8s-master manifests]# kubectl get po -o wide
-NAME                                                              READY   STATUS    RESTARTS   AGE   IP             NODE        NOMINATED NODE   READINESS GATES
-nginx-ingress-nginx-ingress-controller-667cb64f9c-zqg2q           1/1     Running   0          72m   172.16.36.72   k8s-node1   <none>           <none>
-nginx-ingress-nginx-ingress-controller-default-backend-7ccrfv9m   1/1     Running   0          72m   172.16.36.83   k8s-node1   <none>           <none>
-[root@k8s-master manifests]# kubectl get svc
-NAME                                                     TYPE           CLUSTER-IP       EXTERNAL-IP     PORT(S)                      AGE
-nginx-ingress-nginx-ingress-controller                   LoadBalancer   192.168.120.98   172.42.42.101   80:31051/TCP,443:30469/TCP   74m
-nginx-ingress-nginx-ingress-controller-default-backend   ClusterIP      192.168.240.37   <none>          80/TCP                       74m
-# LoadBalancer   192.168.120.98   172.42.42.101 
-# ClusterIP      192.168.240.37
-# PodIP          172.16.36.72
-# NodeIP+Port    192.168.43.20:31051
-# 上面这些均可访问Nginx服务
-[root@k8s-master manifests]# curl 172.42.42.101
-<!DOCTYPE html>
-<html>
-<head>
-<title>Welcome to nginx!</title>
-...
-</body>
-</html>
+# 查看
+[root@k8s-master01 ingress]# kubectl get po -n ingress-nginx -owide
+NAME                                           READY   STATUS    RESTARTS   AGE    IP               NODE           NOMINATED NODE   READINESS GATES
+ingress-nginx-controller-24khj                 1/1     Running   0          6m4s   192.168.43.187   k8s-node02     <none>           <none>
+ingress-nginx-controller-86s8b                 1/1     Running   0          6m5s   192.168.43.183   k8s-master01   <none>           <none>
+ingress-nginx-controller-jmkjt                 1/1     Running   0          6m4s   192.168.43.186   k8s-node01     <none>           <none>
+ingress-nginx-defaultbackend-9db565b46-x4h8l   1/1     Running   0          6m4s   172.27.14.221    k8s-node02     <none>           <none>
+[root@k8s-master01 ingress]# kubectl get svc -n ingress-nginx 
+NAME                                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+ingress-nginx-controller-admission   ClusterIP   10.97.175.75   <none>        443/TCP   6m34s
+ingress-nginx-defaultbackend         ClusterIP   10.99.84.57    <none>        80/TCP    6m34s
+# 可以查看三个打了ingress=true标签的节点上的80/443端口均被ingress-nginx占用
+# 访问他们的80端口，可以看到返回default backend 404
+[root@k8s-master01 ingress]# curl k8s-node01
+default backend - 404
+[root@k8s-master01 ingress]# curl k8s-node02
+default backend - 404
+[root@k8s-master01 ingress]# curl k8s-master01
+default backend - 404
 # 创建Ingress实例
-[root@k8s-master ingress]# vi ngdemo.yaml 
+[root@k8s-master ingress]# vi ngdemo.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -310,6 +374,8 @@ nginx-ingress-nginx-ingress-controller-default-backend   ClusterIP      192.168.
 </body>
 </html>
 ```
+
+> 说明：如果启用了service.enabled=true，查看services，发现external-ip处于Pending状态解决pending状态参考博客 <http://www.deemoprobe.com/yunv/ingress-pending/>或者将ingress-nginx目录下values.yaml中 type: LoadBalancer 字段改为 type: ClusterIP
 
 下图显示了客户端是如果通过 Ingress Controller 连接到其中一个 Pod 的流程,客户端首先对 `nginx.ingress.com` 执行 DNS 解析,得到 Ingress Controller 所在节点的 IP,然后客户端向 Ingress Controller 发送 HTTP 请求,然后根据 Ingress 对象里面的描述匹配域名,找到对应的 Service 对象,并获取关联的 Endpoints 列表,将客户端的请求转发给其中一个 Pod.
 

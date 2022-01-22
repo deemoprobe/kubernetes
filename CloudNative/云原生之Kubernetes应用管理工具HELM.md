@@ -40,7 +40,7 @@ V2 和 V3版本的差异: <https://helm.sh/docs/topics/v2_v3_migration/>
 
 ## 安装并配置仓库
 
-```shell
+```bash
 # 在官方(https://github.com/helm/helm/releases)下载想要的的版本, 当前(2021-01-11)最新稳定版 V3.4.2
 # 解压并配置
 [root@k8s-master ~]# tar -zxvf helm-v3.4.2-linux-amd64.tar.gz
@@ -75,7 +75,7 @@ list-group.no-bg.no-borders.pull-in.m-b-none
 
 ### 查找chart
 
-```shell
+```bash
 Usage:
   helm search [command]
 
@@ -84,7 +84,7 @@ Available Commands:
   repo        search repositories for a keyword in charts
 ```
 
-```shell
+```bash
 # 搜索HELM的远程仓库(Artifact Hub)中的chart
 [root@k8s-master ~]# helm search hub
 # 搜索hub中特定chart
@@ -102,7 +102,7 @@ stable/nginx-ingress                    1.41.3          v0.34.1                 
 
 ### 安装chart
 
-```shell
+```bash
 # 用法
 To override values in a chart, use either the '--values' flag and pass in a file
 or use the '--set' flag and pass configuration from the command line, to force
@@ -122,7 +122,7 @@ Usage:
   helm install [NAME] [CHART] [flags]
 ```
 
-```shell
+```bash
 # 安装stable下的mariadb这个chart包, 发布名配置为adb
 [root@k8s-master ~]# helm install adb stable/mariadb
 WARNING: This chart is deprecated
@@ -149,7 +149,7 @@ NOTES:
 
 ### 安装前自定义chart包
 
-```shell
+```bash
 # 查看chart的用法
 Usage:
   helm show [command]
@@ -164,7 +164,7 @@ Available Commands:
   values      show the chart's values
 ```
 
-```shell
+```bash
 # 查看chart所有信息
 [root@k8s-master ~]# helm show all stable/mariadb
 # 查看chart的定义
@@ -197,7 +197,7 @@ version: 7.3.14
 
 安装前自定义chart配置
 
-```shell
+```bash
 # 先在本地写一个文件
 [root@k8s-master ~]# echo '{mariadbUser: user0, mariadbDatabase: user0db}' > config.yaml
 # 将文件中的配置导入chart包, --generate-name 随机命名
@@ -239,7 +239,7 @@ nginxingress            test            1               2021-01-11 10:50:06.3951
 
 ### 升级(更新)和回滚
 
-```shell
+```bash
 # 升级(更新)用法
 You can specify the '--values'/'-f' flag multiple times. The priority will be given to the
 last (right-most) file specified. For example, if both myvalues.yaml and override.yaml
@@ -264,7 +264,7 @@ Usage:
   helm rollback <RELEASE> [REVISION] [flags]
 ```
 
-```shell
+```bash
 # 准备升级(更新)用的yaml文件, 此处更新了mariadbUser: user0-->mariadbUser: user1
 [root@k8s-master ~]# cat config_upgrade.yaml 
 {mariadbUser: user1, mariadbDatabase: user0db}
@@ -311,4 +311,13 @@ REVISION        UPDATED                         STATUS          CHART           
 USER-SUPPLIED VALUES:
 mariadbDatabase: user0db
 mariadbUser: user1
+```
+
+## 清理
+
+```bash
+# 清理当前namespace下资源
+[root@k8s-master01 ~]# helm uninstall ingress-nginx
+# 清理指定namespace下资源
+[root@k8s-master01 ~]# helm uninstall ingress-nginx -n ingress-nginx
 ```

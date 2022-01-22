@@ -578,6 +578,20 @@ docker.io/deemoprobe/nginx:1.18.0
 [root@demo ~]# docker images deemoprobe/nginx:1.18.0
 REPOSITORY         TAG       IMAGE ID       CREATED          SIZE
 deemoprobe/nginx   1.18.0    b5fd6cb4ca9e   20 minutes ago   133MB
+
+# 或者说直接将拉取的镜像保存在自己的仓库里，可以直接打标签上传
+# 比如拷贝cnych/ingress-nginx-defaultbackend镜像并上传至自己的DockerHub
+# 前提是已经登陆成功
+[root@k8s-node01 ~]# docker images | grep 1.5
+cnych/ingress-nginx-defaultbackend                               1.5       b5af743e5984   3 years ago     5.13MB
+[root@k8s-node01 ~]# docker tag cnych/ingress-nginx-defaultbackend:1.5 deemoprobe/defaultbackend:1.5
+[root@k8s-node01 ~]# docker push deemoprobe/defaultbackend:1.5
+The push refers to repository [docker.io/deemoprobe/defaultbackend]
+b108d4968233: Mounted from cnych/ingress-nginx-defaultbackend 
+1.5: digest: sha256:4dc5e07c8ca4e23bddb3153737d7b8c556e5fb2f29c4558b7cd6e6df99c512c7 size: 528
+[root@k8s-node01 ~]# docker images | grep 1.5
+cnych/ingress-nginx-defaultbackend                               1.5       b5af743e5984   3 years ago     5.13MB
+deemoprobe/defaultbackend                                        1.5       b5af743e5984   3 years ago     5.13MB
 ```
 
 ### 高级命令

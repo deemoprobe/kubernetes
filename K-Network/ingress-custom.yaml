@@ -1,0 +1,63 @@
+controller:
+  name: controller
+  image:
+    repository: registry.cn-hangzhou.aliyuncs.com/deemoprobe/ingress-nginx-controller
+    tag: "1.1.1"
+    digest: sha256:e16123f3932f44a2bba8bc3cf1c109cea4495ee271d6d16ab99228b58766d3ab
+
+  dnsPolicy: ClusterFirstWithHostNet
+
+  hostNetwork: true # 开启hostNetwork模式
+
+  publishService:  # hostNetwork 模式下设置为false，通过节点IP地址上报ingress status数据
+    enabled: false
+
+  # 是否需要处理不带 ingressClass 注解或者 ingressClassName 属性的 Ingress 对象
+  # 设置为 true 会在控制器启动参数中新增一个 --watch-ingress-without-class 标注
+  watchIngressWithoutClass: false
+
+  kind: DaemonSet
+
+  tolerations:   # kubeadm 安装的集群默认情况下master是有污点，需要容忍这个污点才可以部署
+  - key: "node-role.kubernetes.io/master"  # 生产环境不建议部署在master节点
+    operator: "Equal"
+    effect: "NoSchedule"
+
+  nodeSelector:
+    ingress: "true"  # 选择标签为ingress=true的节点进行部署
+
+  service:  # HostNetwork 模式不需要创建service
+    enabled: false
+
+  admissionWebhooks: # 强烈建议开启 admission webhook
+    enabled: true
+    createSecretJob:
+      resources:
+        limits:
+          cpu: 10m
+          memory: 20Mi
+        requests:
+          cpu: 10m
+          memory: 20Mi
+    patchWebhookJob:
+      resources:
+        limits:
+          cpu: 10m
+          memory: 20Mi
+        requests:
+          cpu: 10m
+          memory: 20Mi
+    patch:
+      enabled: true
+      image:
+        repository: registry.cn-hangzhou.aliyuncs.com/deemoprobe/kube-webhook-certgen
+        tag: "1.1.1"
+        digest: sha256:23a03c9c381fba54043d0f6148efeaf4c1ca2ed176e43455178b5c5ebf15ad70
+
+defaultBackend:  # 启用并配置默认后端404页面
+  enabled: true
+  name: defaultbackend
+  image:
+    repository: registry.cn-hangzhou.aliyuncs.com/deemoprobe/defaultbackend-amd64
+    tag: "1.5"
+    digest: sha256:5c51a4d6c2669c4fe765497153872ec6b0b12ce65f5cbadad6869c25d5197b3a
