@@ -2,12 +2,14 @@
 
 ## 环境说明
 
-- 宿主机系统: Windows 10
-- 虚拟机版本: VMware® Workstation 16 Pro
-- IOS镜像版本: CentOS Linux release 7.9.2009
-- 集群操作用户: root
+- 宿主机系统：Windows 10
+- 虚拟机版本：VMware® Workstation 16 Pro
+- IOS镜像版本：CentOS Linux release 7.9.2009
+- 集群操作用户：root
+- Kubernetes版本：1.23.0
+- Runtime：Docker
 
-CentOS7虚拟机安装和配置静态IP请参考博客文章：[VMWARE WORKSTATION安装CENTOS7并配置静态IP](http://www.deemoprobe.com/principle/vmware-workstation%e5%ae%89%e8%a3%85centos7%e5%b9%b6%e9%85%8d%e7%bd%ae%e9%9d%99%e6%80%81ip/)
+CentOS7虚拟机安装请参考博客文章：[LINUX之VMWARE WORKSTATION安装CENTOS-7](http://www.deemoprobe.com/standard/vmware-centos7/)
 
 ## 资源分配
 
@@ -19,7 +21,7 @@ Kubernetes集群需要规划三个网段：
 - Pod网段：集群内Pod的网段，相当于容器的IP
 - Service网段：集群内服务发现使用的网段，service用于集群容器通信
 
-生产环境根据申请到的IP资源进行分配即可，原则是三个网段不要有交叉。本文虚拟机练习环境IP地址段分配如下：
+生产环境根据申请到的IP资源进行分配即可，原则是三个网段不允许有重合IP。IP网段计算可以参考：[在线IP地址计算](http://tools.jb51.net/aideddesign/ip_net_calc/)。本文虚拟机练习环境IP地址网段分配如下：
 
 - 宿主机网段：`192.168.43.1/24`
 - Pod网段：`172.16.0.0/12`
@@ -27,37 +29,41 @@ Kubernetes集群需要规划三个网段：
 
 ### 节点分配
 
-本次实验采用3管理节点2工作节点的高可用Kubernetes集群模式:
+采用`3管理节点2工作节点`的高可用Kubernetes集群模式：
 
 - k8s-master01/k8s-master02/k8s-master03 集群的Master节点
 - 三个master节点同时做etcd集群
 - k8s-node01/k8s-node02 集群的Node节点
-- k8s-master-vip: 192.168.43.182,是做高可用k8s-master01~3的虚拟IP,不占用物理资源
+- k8s-master-vip做高可用k8s-master01~03的VIP，不占用物理资源
 
-|  主机节点名称  |       IP       | CPU核心数 | 内存大小 | 磁盘大小 |
-| :------------: | :------------: | :-------: | :------: | :------: |
+| 主机节点名称   |       IP       | CPU核心数 | 内存大小 | 磁盘大小 |
+| :------------- | :------------: | :-------: | :------: | :------: |
 | k8s-master-vip | 192.168.43.182 |     /     |    /     |    /     |
-|  k8s-master01  | 192.168.43.183 |     2     |    2G    |   40G    |
-|  k8s-master02  | 192.168.43.184 |     2     |    2G    |   40G    |
-|  k8s-master03  | 192.168.43.185 |     2     |    2G    |   40G    |
-|   k8s-node01   | 192.168.43.186 |     2     |    2G    |   40G    |
-|   k8s-node02   | 192.168.43.187 |     2     |    2G    |   40G    |
+| k8s-master01   | 192.168.43.183 |     2     |    2G    |   40G    |
+| k8s-master02   | 192.168.43.184 |     2     |    2G    |   40G    |
+| k8s-master03   | 192.168.43.185 |     2     |    2G    |   40G    |
+| k8s-node01     | 192.168.43.186 |     2     |    2G    |   40G    |
+| k8s-node02     | 192.168.43.187 |     2     |    2G    |   40G    |
 
 ## 操作步骤
 
-小括号注释说明：
+标题后小括号注释表明操作范围：
 
-- ALL 所有节点都要执行
-- Master 只需要在master节点(k8s-master01/k8s-master02/k8s-master03)执行
-- Node 只需要在node节点(k8s-node01/k8s-node02)执行
+- ALL 所有节点（k8s-master01/k8s-master02/k8s-master03/k8s-node01/k9s-node02）执行
+- Master 只需要在master节点（k8s-master01/k8s-master02/k8s-master03）执行
+- Node 只需要在node节点（k8s-node01/k8s-node02）执行
+- 已标注的个别命令只需要在某一台机器执行，会在操作前说明
+- 未标注的会在操作时说明
+
+> 使用`cat << EOF >> file`添加文件内容注意里面如果有变量定义，需要将变量转义，例如`$Parameter`应改写为`\$Parameter`；同时注意`>`、`>>`。
 
 ### 准备工作(ALL)
 
 添加主机信息、关闭防火墙、关闭swap、关闭SELinux、dnsmasq、NetworkManager
 
 ```bash
-# 以k8s-master01为例
-[root@k8s-master01 ~]# cat << EOF >> /etc/hosts
+# 添加主机信息
+cat << EOF >> /etc/hosts
 192.168.43.182    k8s-master-vip
 192.168.43.183    k8s-master01
 192.168.43.184    k8s-master02
@@ -65,31 +71,32 @@ Kubernetes集群需要规划三个网段：
 192.168.43.186    k8s-node01
 192.168.43.187    k8s-node02
 EOF
-```
-
-```bash
-# 直接执行下面命令
-systemctl stop firewalld
-systemctl disable firewalld
+# 关闭防火墙、dnsmasq、NetworkManager，--now参数表示关闭服务并移除开机自启
+# 这些服务是否可以关闭视情况而定，本文是虚拟机实践，没有用到这些服务
+systemctl disable --now firewalld
 systemctl disable --now dnsmasq
 systemctl disable --now NetworkManager
-
+# 关闭swap，并注释fstab文件swap所在行
 swapoff -a
 sed -i '/swap/s/^\(.*\)$/#\1/g' /etc/fstab
-
+# 关闭SELinux，并更改selinux配置文件
 setenforce 0
 sed -i "s/=enforcing/=disabled/g" /etc/selinux/config
-
-# 值得注意的是/etc/sysconfig/selinux文件是/etc/selinux/config文件的软连接，用sed -i命令修改软连接文件的话会破坏软连接属性，将/etc/sysconfig/selinux变为一个文件，即使该文件被修改了，但源文件/etc/selinux/config配置是没变的，所以推荐直接修改/etc/selinux/config中的配置，要么就直接vim编辑文件（编辑模式不会修改文件属性）修改也可以
 ```
 
-### 更新源并升级内核(ALL)
+> 值得注意的是`/etc/sysconfig/selinux`文件是`/etc/selinux/config`文件的软连接，用`sed -i`命令修改软连接文件会破坏软连接属性，将`/etc/sysconfig/selinux`变为一个独立的文件，即使该文件被修改了，但源文件`/etc/selinux/config`配置是没变的。此外，使用vim等编辑器编辑源文件或链接文件（编辑模式不会修改文件属性）修改也可以。软链接原理可参考博客：[LINUX之INODE详解](http://www.deemoprobe.com/yunv/inode/)
+
+### 必要操作(ALL)
 
 ```bash
-# 默认的yum源太慢，更新为阿里源，同时用sed命令删除包含下面不需要的两个URL的行
+# 默认的yum源太慢，更新为阿里源，同时用sed命令删除文件中不需要的两个URL的行
 curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo
 sed -i -e '/mirrors.cloud.aliyuncs.com/d' -e '/mirrors.aliyuncs.com/d' /etc/yum.repos.d/CentOS-Base.repo
-# 配置阿里云Kubernetes镜像源
+
+# 安装常用工具包
+yum install wget jq psmisc vim net-tools telnet yum-utils device-mapper-persistent-data lvm2 git -y
+
+# 配置阿里Kubernetes源
 cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
@@ -100,24 +107,87 @@ repo_gpgcheck=1
 gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg
        http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
 EOF
+# 配置阿里docker源
+yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 
-# 安装常用工具包（在需要时安装也可以，通常一起装了比较省事）
-yum install wget jq psmisc vim net-tools telnet yum-utils device-mapper-persistent-data lvk8s-master02 git -y
+# 配置ntpdate，同步服务器时间
+rpm -ivh http://mirrors.wlnmp.com/centos/wlnmp-release-centos.noarch.rpm
+yum install ntpdate -y
+# 同步时区和时间
+ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+echo 'Asia/Shanghai' >/etc/timezone
+ntpdate time2.aliyun.com
+# 可以加入计划任务，保证集群时钟是一致的
+# /var/spool/cron/root文件也是crontab -e写入的文件
+# crontab执行日志查看可用：tail -f /var/log/cron
+cat << EOF >> /var/spool/cron/root
+*/5 * * * * /usr/sbin/ntpdate time2.aliyun.com
+EOF
 
-# 升级内核，4.17以下的内核cgroup存在内存泄漏的BUG，具体分析过程浏览器搜一下“Kubernetes集群为什么要升级内核”会有一大波文章
+# 保证文件句柄不会限制集群的可持续发展，配置limits
+ulimit -SHn 65500
+cat << EOF >> /etc/security/limits.conf
+* soft nofile 65500
+* hard nofile 65500
+* soft nproc 65500
+* hard nproc 65500
+* soft memlock unlimited
+* hard memlock unlimited
+EOF
+
+# 配置免密登录，k8s-master01到其他节点
+# 生成密钥对（在k8s-master01节点配置即可）
+ssh-keygen -t rsa
+# 拷贝公钥到其他节点，首次需要认证一下各个节点的root密码，以后就可以免密ssh到其他节点
+for i in k8s-master02 k8s-master03 k8s-node01 k8s-node02;do ssh-copy-id -i .ssh/id_rsa.pub $i;done
+
+# 克隆二进制仓库文件（k8s-master01上操作即可）
+cd root;git clone https://gitee.com/deemoprobe/k8s-ha-install.git
+
+cd k8s-ha-install;git branch -a
+* master
+  remotes/origin/HEAD -> origin/master
+  remotes/origin/manual-installation
+  remotes/origin/manual-installation-v1.16.x
+  remotes/origin/manual-installation-v1.17.x
+  remotes/origin/manual-installation-v1.18.x
+  remotes/origin/manual-installation-v1.19.x
+  remotes/origin/manual-installation-v1.20.x
+  remotes/origin/manual-installation-v1.20.x-csi-hostpath
+  remotes/origin/manual-installation-v1.21.x
+  remotes/origin/manual-installation-v1.22.x
+  remotes/origin/manual-installation-v1.23.x
+  remotes/origin/master
+# 可以切换到需要版本的分支中获取配置文件
+git checkout manual-installation-v1.22.x
+
+# 所有节点系统升级
+yum update --exclude=kernel* -y
+```
+
+- 升级内核，4.17以下的内核cgroup存在内存泄漏的BUG，具体分析过程浏览器搜`Kubernetes集群为什么要升级内核`会有很多文章讲解
+
+> 内核备用下载：[kernel-ml-devel-4.19.12-1.el7.elrepo.x86_64.rpm](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/repo/kernel-ml-devel-4.19.12-1.el7.elrepo.x86_64.rpm?versionId=CAEQNBiBgMDJiNbj.hciIDUyMDZlYjU5YzIwMzQ0MmNhNzBmNjBiMDY3Yjc0Y2Jl)；[kernel-ml-4.19.12-1.el7.elrepo.x86_64.rpm](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/repo/kernel-ml-4.19.12-1.el7.elrepo.x86_64.rpm?versionId=CAEQNBiBgMDNiNbj.hciIGQ0M2RmZDAwNDhlNjQyNjE5MTE4MDk1OGU4OThiNWY4)；下载到本地后上传到服务器
+
+```bash
+# 下载4.19版本内核，如果无法下载，可以用上面提供的备用下载
 cd /root
 wget http://193.49.22.109/elrepo/kernel/el7/x86_64/RPMS/kernel-ml-devel-4.19.12-1.el7.elrepo.x86_64.rpm
 wget http://193.49.22.109/elrepo/kernel/el7/x86_64/RPMS/kernel-ml-4.19.12-1.el7.elrepo.x86_64.rpm
+
+# 可以在k8s-master01节点下载后，免密传到其他节点
+for i in k8s-master02 k8s-master03 k8s-node01 k8s-node02;do scp kernel-ml-* $i:/root;done
+
 # 所有节点安装内核
 cd /root && yum localinstall -y kernel-ml*
 # 所有节点更改内核启动顺序
 grub2-set-default  0 && grub2-mkconfig -o /etc/grub2.cfg
 grubby --args="user_namespace.enable=1" --update-kernel="$(grubby --default-kernel)"
-# 检查默认内核是不是4.19，并重启节点
+# 查看默认内核，并重启节点
 grubby --default-kernel
 reboot
 
-# 检查内核是不是4.19
+# 确认内核版本
 uname -a
 # （可选）删除老版本的内核，避免以后被升级取代默认的开机4.19内核
 rpm -qa | grep kernel
@@ -126,10 +196,10 @@ yum remove -y kernel-3*
 # 升级系统软件包（如果跳过内核升级加参数 --exclude=kernel*）
 yum update -y
 
-# 安装IPVS内核模块，由于IPVS在资源消耗和性能上均已明显优于iptables，所以推荐开启
+# 安装IPVS相关工具，由于IPVS在资源消耗和性能上均已明显优于iptables，所以推荐开启
 # 具体原因可参考官网介绍 https://kubernetes.io/zh/blog/2018/07/09/ipvs-based-in-cluster-load-balancing-deep-dive/
 yum install ipvsadm ipset sysstat conntrack libseccomp -y
-# 加载模块，最后一条4.18以下内核使用nf_conntrack_ipv4，4.19已改为nf_conntrack
+# 加载模块，最后一条4.18及以下内核使用nf_conntrack_ipv4，4.19已改为nf_conntrack
 modprobe -- ip_vs
 modprobe -- ip_vs_rr
 modprobe -- ip_vs_wrr
@@ -160,9 +230,9 @@ ipt_rpfilter
 ipt_REJECT
 ipip
 EOF
-# 加载
-systemctl enable --now systemd-modules-load.service
-# 自定义内核参数配置文件
+# systemd-modules-load加入开机自启
+systemctl enable --now systemd-modules-load
+# 自定义内核参数优化配置文件
 cat << EOF > /etc/sysctl.d/kubernetes.conf
 net.ipv4.ip_forward = 1
 net.bridge.bridge-nf-call-iptables = 1
@@ -191,34 +261,14 @@ net.core.somaxconn = 16384
 EOF
 # 加载
 sysctl --system
-# 重启查看PIVS模块是否依旧加载
+# 重启查看IPVS模块是否依旧加载
 reboot
-lsmod | grep ip_vs
-
-# 配置ntpdate,同步服务器时间
-rpm -ivh http://mirrors.wlnmp.com/centos/wlnmp-release-centos.noarch.rpm
-yum install ntpdate -y
-# 同步时区和时间
-ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-echo 'Asia/Shanghai' >/etc/timezone
-ntpdate time2.aliyun.com
-
-# 配置limits
-cat << EOF >> /etc/security/limits.conf
-* soft nofile 655360
-* hard nofile 131072
-* soft nproc 655350
-* hard nproc 655350
-* soft memlock unlimited
-* hard memlock unlimited
-EOF
-
-# 配置免密登录, k8s-master01到其他节点
-# 先生成认证文件
-ssh-keygen -t rsa
-# 拷贝公钥信息到其他节点，同时认证一次各个节点的root密码，以后就可以免密ssh到其他节点
-for i in k8s-master02 k8s-master03 k8s-node01 k8s-node02;do ssh-copy-id -i .ssh/id_rsa.pub $i;done
+lsmod | grep -e ip_vs -e nf_conntrack
 ```
+
+- 保证每台服务器中IPVS加载成功，以k8s-master01为例，如图：
+
+![20220305153926](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20220305153926.png)
 
 ### 部署Docker(ALL)
 
@@ -234,9 +284,6 @@ yum remove -y docker \
               docker-engine
 
 yum remove -y docker-ce docker-ce-cli containerd.io
-
-# 设置docker仓库
-yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 
 # 安装最新版本docker
 yum install docker-ce docker-ce-cli containerd.io -y
@@ -808,9 +855,157 @@ token:      eyJhbGciOiJSUzI1NiIsImtpZCI6IjRyZlh6Ukxta0FlajlHREF5ei1mdl8tZmR6ekwt
 
 ![20211213154451](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20211213154451.png)
 
-## 一些必要的更改
+## 集群优化(可选)
+
+Docker可在`/etc/docker/daemon.json`自定义优化配置，所有配置可见：[官方docker configuration](https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file)，docker常用优化配置见下方注释说明。
 
 ```bash
+# 优化docker配置
+# /etc/docker/daemon.json文件，使用时删除注释，因为JSON文件不支持注释
+{
+  "allow-nondistributable-artifacts": [],
+  "api-cors-header": "",
+  "authorization-plugins": [],
+  "bip": "",
+  "bridge": "",
+  "cgroup-parent": "",
+  "cluster-advertise": "",
+  "cluster-store": "",
+  "cluster-store-opts": {},
+  "containerd": "/run/containerd/containerd.sock",
+  "containerd-namespace": "docker",
+  "containerd-plugin-namespace": "docker-plugins",
+  "data-root": "", # 数据根目录，大量docker镜像可能会占用较大存储，可以设置系统盘外的挂载盘
+  "debug": true,
+  "default-address-pools": [
+    {
+      "base": "172.30.0.0/16",
+      "size": 24
+    },
+    {
+      "base": "172.31.0.0/16",
+      "size": 24
+    }
+  ],
+  "default-cgroupns-mode": "private",
+  "default-gateway": "",
+  "default-gateway-v6": "",
+  "default-runtime": "runc",
+  "default-shm-size": "64M",
+  "default-ulimits": {
+    "nofile": {
+      "Hard": 64000,
+      "Name": "nofile",
+      "Soft": 64000
+    }
+  },
+  "dns": [],
+  "dns-opts": [],
+  "dns-search": [],
+  "exec-opts": [],
+  "exec-root": "",
+  "experimental": false,
+  "features": {},
+  "fixed-cidr": "",
+  "fixed-cidr-v6": "",
+  "group": "",
+  "hosts": [],
+  "icc": false,
+  "init": false,
+  "init-path": "/usr/libexec/docker-init",
+  "insecure-registries": [],
+  "ip": "0.0.0.0",
+  "ip-forward": false,
+  "ip-masq": false,
+  "iptables": false,
+  "ip6tables": false,
+  "ipv6": false,
+  "labels": [],
+  "live-restore": true, # docker进程宕机时容器依然保持存活
+  "log-driver": "json-file", # 日志格式
+  "log-level": "", # 日志级别
+  "log-opts": { # 日志优化
+    "cache-disabled": "false",
+    "cache-max-file": "5",
+    "cache-max-size": "20m",
+    "cache-compress": "true",
+    "env": "os,customer",
+    "labels": "somelabel",
+    "max-file": "5", # 最大日志数量
+    "max-size": "10m" # 保存的最大日志大小
+  },
+  "max-concurrent-downloads": 3, # pull下载并发数
+  "max-concurrent-uploads": 5, # push上传并发数
+  "max-download-attempts": 5,
+  "mtu": 0,
+  "no-new-privileges": false,
+  "node-generic-resources": [
+    "NVIDIA-GPU=UUID1",
+    "NVIDIA-GPU=UUID2"
+  ],
+  "oom-score-adjust": -500,
+  "pidfile": "",
+  "raw-logs": false,
+  "registry-mirrors": [], # 镜像加速器地址
+  "runtimes": {
+    "cc-runtime": {
+      "path": "/usr/bin/cc-runtime"
+    },
+    "custom": {
+      "path": "/usr/local/bin/my-runc-replacement",
+      "runtimeArgs": [
+        "--debug"
+      ]
+    }
+  },
+  "seccomp-profile": "",
+  "selinux-enabled": false,
+  "shutdown-timeout": 15,
+  "storage-driver": "",
+  "storage-opts": [],
+  "swarm-default-advertise-addr": "",
+  "tls": true,
+  "tlscacert": "",
+  "tlscert": "",
+  "tlskey": "",
+  "tlsverify": true,
+  "userland-proxy": false,
+  "userland-proxy-path": "/usr/libexec/docker-proxy",
+  "userns-remap": ""
+}
+
+# 设置证书有效期
+[root@k8s-master01 ~]# vim /usr/lib/systemd/system/kube-controller-manager.service
+... # 加入下面配置
+--experimental-cluster-signing-duration=876000h0m0s
+...
+[root@k8s-master01 ~]# systemctl daemon-reload
+[root@k8s-master01 ~]# systemctl restart kube-controller-manager
+
+# kubelet优化加密算法，默认的算法容易被漏洞扫描；增长镜像下载周期，避免有些大镜像未下载完成就被动死亡退出
+# --tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+# --image-pull-progress-deadline=30m
+[root@k8s-master01 ~]# vim /etc/systemd/system/kubelet.service.d/10-kubelet.conf
+... # 下面这行中KUBELET_EXTRA_ARGS=后加入配置
+Environment="KUBELET_EXTRA_ARGS=--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 --image-pull-progress-deadline=30m"
+...
+
+# 集群配置优化，详见https://kubernetes.io/zh/docs/tasks/administer-cluster/reserve-compute-resources/
+[root@k8s-master01 ~]# vim /etc/kubernetes/kubelet-conf.yml
+# 文件中添加如下配置
+rotateServerCertificates: true
+allowedUnsafeSysctls: # 允许在修改内核参数，此操作按情况选择，用不到就不用设置
+ - "net.core*"
+ - "net.ipv4.*"
+kubeReserved: # 为Kubernetes集群守护进程组件预留资源，例如：kubelet、Runtime等
+  cpu: "100m"
+  memory: 100Mi
+  ephemeral-storage: 1Gi
+systemReserved: # 为系统守护进程预留资源，例如：sshd、cron等
+  cpu: "100m"
+  memory: 100Mi
+  ephemeral-storage: 1Gi
+
 # 更改kube-proxy模式为ipvs
 [root@k8s-master01 dashboard]# kubectl edit cm kube-proxy -n kube-system
 mode: "ipvs"
@@ -820,25 +1015,28 @@ daemonset.apps/kube-proxy patched
 # 验证
 [root@k8s-master01 dashboard]# curl 127.0.0.1:10249/proxyMode
 ipvs
+
+# 为集群节点打标签，删除标签把 = 换成 - 即可
+kubectl label nodes k8s-node01 node-role.kubernetes.io/node=
+kubectl label nodes k8s-node02 node-role.kubernetes.io/node=
+kubectl label nodes k8s-master01 node-role.kubernetes.io/master=
+kubectl label nodes k8s-master02 node-role.kubernetes.io/master=
+kubectl label nodes k8s-master03 node-role.kubernetes.io/master=
+# 添加标签后查看集群状态
+[root@k8s-master01 ~]# kubectl get node
+NAME           STATUS   ROLES    AGE    VERSION
+k8s-master01   Ready    master   100m   v1.23.0
+k8s-master02   Ready    master   100m   v1.23.0
+k8s-master03   Ready    master   100m   v1.23.0
+k8s-node01     Ready    node     100m   v1.23.0
+k8s-node02     Ready    node     100m   v1.23.0
 ```
+
+> 生产环境建议ETCD集群和Kubernetes集群分离，而且使用高性能数据盘存储数据，根据情况决定是否将Master节点也作为Pod调度节点。
 
 ## 测试集群
 
 ```bash
-# 增加node节点的节点role名称
-kubectl label nodes k8s-node1 node-role.kubernetes.io/node=
-# 删除node节点的节点role名称
-kubectl label nodes k8s-node1 node-role.kubernetes.io/node-
-
-# 添加标签后查看集群状态
-[root@k8s-master01 calico]# kubectl get no
-NAME           STATUS   ROLES                  AGE   VERSION
-k8s-master01   Ready    control-plane,master   56m   v1.23.0
-k8s-master02   Ready    control-plane,master   40m   v1.23.0
-k8s-master03   Ready    control-plane,master   39m   v1.23.0
-k8s-node01     Ready    node                   38m   v1.23.0
-k8s-node02     Ready    node                   38m   v1.23.0
-
 # 测试namespace
 kubectl get namespace
 kubectl create namespace test
@@ -851,14 +1049,14 @@ kubectl expose deployment nginx --port=80 --type=NodePort
 # 查看调度状态和端口号
 [root@k8s-master01 calico]# kubectl get pod,svc -owide
 NAME                         READY   STATUS    RESTARTS   AGE     IP              NODE         NOMINATED NODE   READINESS GATES
-pod/nginx-85b98978db-7mn6r   1/1     Running   0          2m16s   172.27.14.193   k8s-node02   <none>           <none>
+pod/nginx-85b98978db-7mn6r   1/1     Running   0          2m16s   172.27.14.193   k8s-master02   <none>           <none>
 
 NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE    SELECTOR
 service/kubernetes   ClusterIP   10.96.0.1      <none>        443/TCP        59m    <none>
 service/nginx        NodePort    10.104.33.99   <none>        80:31720/TCP   2m6s   app=nginx
 ```
 
-可见调度到了k8s-node02（node IP地址是192.168.43.184）上，对应的NodePort为31720
+可见调度到了k8s-master02（IP地址是192.168.43.184）上，对应的NodePort为31720
 
 > 在浏览器输入<http://192.168.43.184:31720/> 访问nginx，访问结果如图
 
