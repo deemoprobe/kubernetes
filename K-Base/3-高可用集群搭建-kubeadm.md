@@ -9,7 +9,7 @@
 - Kubernetes版本：1.23.0
 - Runtime：Docker
 
-CentOS7虚拟机安装请参考博客文章：[LINUX之VMWARE WORKSTATION安装CENTOS-7](http://www.deemoprobe.com/standard/vmware-centos7/)
+CentOS7安装请参考博客文章：[LINUX之VMWARE WORKSTATION安装CENTOS-7](http://www.deemoprobe.com/standard/vmware-centos7/)
 
 ## 资源分配
 
@@ -55,7 +55,7 @@ Kubernetes集群需要规划三个网段：
 - 已标注的个别命令只需要在某一台机器执行，会在操作前说明
 - 未标注的会在操作时说明
 
-> 使用`cat << EOF >> file`添加文件内容注意里面如果有变量定义，需要将变量转义，例如`$Parameter`应改写为`\$Parameter`；同时注意`>`、`>>`。
+使用`cat << EOF >> file`添加文件内容注意里面如果有变量定义，需要将变量转义，例如`$Parameter`应改写为`\$Parameter`；同时注意`>`、`>>`。
 
 ### 准备工作(ALL)
 
@@ -84,7 +84,7 @@ setenforce 0
 sed -i "s/=enforcing/=disabled/g" /etc/selinux/config
 ```
 
-> 值得注意的是`/etc/sysconfig/selinux`文件是`/etc/selinux/config`文件的软连接，用`sed -i`命令修改软连接文件会破坏软连接属性，将`/etc/sysconfig/selinux`变为一个独立的文件，即使该文件被修改了，但源文件`/etc/selinux/config`配置是没变的。此外，使用vim等编辑器编辑源文件或链接文件（编辑模式不会修改文件属性）修改也可以。软链接原理可参考博客：[LINUX之INODE详解](http://www.deemoprobe.com/yunv/inode/)
+值得注意的是`/etc/sysconfig/selinux`文件是`/etc/selinux/config`文件的软连接，用`sed -i`命令修改软连接文件会破坏软连接属性，将`/etc/sysconfig/selinux`变为一个独立的文件，即使该文件被修改了，但源文件`/etc/selinux/config`配置是没变的。此外，使用vim等编辑器编辑源文件或链接文件（编辑模式不会修改文件属性）修改也可以。软链接原理可参考博客：[LINUX之INODE详解](http://www.deemoprobe.com/yunv/inode/)
 
 ### 必要操作(ALL)
 
@@ -165,9 +165,12 @@ git checkout manual-installation-v1.22.x
 yum update --exclude=kernel* -y
 ```
 
-- 升级内核，4.17以下的内核cgroup存在内存泄漏的BUG，具体分析过程浏览器搜`Kubernetes集群为什么要升级内核`会有很多文章讲解
+升级内核，4.17以下的内核cgroup存在内存泄漏的BUG，具体分析过程浏览器搜`Kubernetes集群为什么要升级内核`会有很多文章讲解
 
-> 内核备用下载：[kernel-ml-devel-4.19.12-1.el7.elrepo.x86_64.rpm](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/repo/kernel-ml-devel-4.19.12-1.el7.elrepo.x86_64.rpm?versionId=CAEQNBiBgMDJiNbj.hciIDUyMDZlYjU5YzIwMzQ0MmNhNzBmNjBiMDY3Yjc0Y2Jl)；[kernel-ml-4.19.12-1.el7.elrepo.x86_64.rpm](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/repo/kernel-ml-4.19.12-1.el7.elrepo.x86_64.rpm?versionId=CAEQNBiBgMDNiNbj.hciIGQ0M2RmZDAwNDhlNjQyNjE5MTE4MDk1OGU4OThiNWY4)；下载到本地后上传到服务器
+内核备用下载（建议下载到本地后上传到服务器，尽量不用`wget`）：
+
+- [kernel-ml-devel-4.19.12-1.el7.elrepo.x86_64.rpm](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/repo/kernel-ml-devel-4.19.12-1.el7.elrepo.x86_64.rpm?versionId=CAEQNBiBgMDJiNbj.hciIDUyMDZlYjU5YzIwMzQ0MmNhNzBmNjBiMDY3Yjc0Y2Jl)
+- [kernel-ml-4.19.12-1.el7.elrepo.x86_64.rpm](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/repo/kernel-ml-4.19.12-1.el7.elrepo.x86_64.rpm?versionId=CAEQNBiBgMDNiNbj.hciIGQ0M2RmZDAwNDhlNjQyNjE5MTE4MDk1OGU4OThiNWY4)
 
 ```bash
 # 下载4.19版本内核，如果无法下载，可以用上面提供的备用下载
@@ -1032,7 +1035,7 @@ k8s-node01     Ready    node     100m   v1.23.0
 k8s-node02     Ready    node     100m   v1.23.0
 ```
 
-> 生产环境建议ETCD集群和Kubernetes集群分离，而且使用高性能数据盘存储数据，根据情况决定是否将Master节点也作为Pod调度节点。
+生产环境建议ETCD集群和Kubernetes集群分离，而且使用高性能数据盘存储数据，根据情况决定是否将Master节点也作为Pod调度节点。
 
 ## 测试集群
 
@@ -1058,7 +1061,7 @@ service/nginx        NodePort    10.104.33.99   <none>        80:31720/TCP   2m6
 
 可见调度到了k8s-master02（IP地址是192.168.43.184）上，对应的NodePort为31720
 
-> 在浏览器输入<http://192.168.43.184:31720/> 访问nginx，访问结果如图
+在浏览器输入<http://192.168.43.184:31720/> 访问nginx，访问结果如图
 
 ![20211213143124](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20211213143124.png)
 
