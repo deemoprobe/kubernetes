@@ -10,8 +10,6 @@ Namespace在多用户之间通过`资源配额(resource-quotas)`进行集群资�
 
 ## 使用Namespace
 
-首先指明一点: 大部分API资源都位于特定的namespace中, 但并不是所有的API资源都在特定的namespace中(如: namespace本身/持久卷PV等)
-
 ```bash
 # 位于namespace作用域中的资源
 [root@k8s-master01 ~]# kubectl api-resources --namespaced=true
@@ -199,8 +197,6 @@ Context "kubernetes-admin@kubernetes" modified.
                                  Dload  Upload   Total   Spent    Left  Speed
 100   643  100   643    0     0    163      0  0:00:03  0:00:03 --:--:--   163
 100  5555  100  5555    0     0    638      0  0:00:08  0:00:08 --:--:--  1704
-[root@k8s-master01 ~]# ls -al /bin/kubens 
--rw-r--r-- 1 root root 5555 Jan 11 11:35 /bin/kubens
 [root@k8s-master01 ~]# chmod +x /bin/kubens 
 [root@k8s-master01 ~]# kubens -h
 USAGE:
