@@ -1,12 +1,12 @@
 # 基于Jenkins-Ansible-Gitlab的CICD实践
 
-> 提示：文中大部分图片设置了点击放大功能，细节信息可以放大图片查看，点击图片以外的空白区域返回阅读。
+提示：文中大部分图片设置了点击放大功能，细节信息可以放大图片查看，点击图片以外的空白区域即可返回阅读。
 
 ## 概要
 
 CI/CD（Continuous Integration/Continuous Delivery）指持续集成和持续交付。
 
-CI属于开发人员的自动化流程，成功的CI意味着：由不同分支合并过来的应用代码会被定期构建、测试。持续集成中代码构建、单元测试和集成测试的自动化流程后，持续交付可自动将已验证的代码发布。持续交付的目标是拥有一个可随时部署到生产环境的代码库。
+CI属于开发人员的自动化流程，成功的CI意味着：由仓库不同分支合并过来的应用代码会被定期构建、测试。持续集成中代码构建、单元测试和集成测试的自动化流程后，持续交付可自动将已验证的代码发布。持续交付的目标是拥有一个可随时部署到生产环境的代码库。
 
 下图是敏捷开发（Agile Development）、CI、CD和DevOps几个开发模式所对应的周期：
 
@@ -23,7 +23,7 @@ CI属于开发人员的自动化流程，成功的CI意味着：由不同分支�
 - 操作用户：root
 - IP分配：192.168.43.210-213
 
-> 虚拟机安装CentOS-7系统配置静态IP以及常用工具的安装请参考另一篇博客：[LINUX之VMWARE WORKSTATION安装CENTOS-7](http://www.deemoprobe.com/standard/vmware-centos7/)
+> 虚拟机安装CentOS-7系统配置静态IP以及常用工具的安装请参考另一篇博客：[LINUX之VMWARE WORKSTATION安装CENTOS-7](https://www.deemoprobe.com/standard/vmware-centos7/)
 
 IP和主机域名分配：
 
@@ -41,6 +41,7 @@ IP和主机域名分配：
 # 如果编辑保存时提示文件只读没有权限，复制hosts文件内容后重命名该文件
 # 在桌面写一个hosts文件（不要有后缀名）粘贴原来文件的配置后写入自己的配置
 # 最后复制桌面的hosts到C:\Windows\System32\drivers\etc\目录
+# 或者使用火绒安全-安全工具里面的“修改HOSTS文件”功能可直接修改
 192.168.43.210	gitlab.deemoprobe.com
 192.168.43.211	jenkins.deemoprobe.com
 192.168.43.212	dest.deemoprobe.com
@@ -48,7 +49,7 @@ IP和主机域名分配：
 
 ## Gitlab实践
 
-> 说明：生产环境请权衡防火墙和SELinux设置，在没有外层防火墙的情况下不建议禁用，按需开放所需端口策略即可。
+说明：生产环境请权衡防火墙和SELinux设置，在没有外层防火墙的情况下不建议禁用，按需开放所需端口策略即可。
 
 ```bash
 # 禁用防火墙
@@ -302,7 +303,7 @@ To https://gitlab.deemoprobe.com/root/golang.git
 
 ## Ansible实践
 
-> GitHub上面的Ansible项目如果直接拉到本地速度很慢，可以通过URL形式上传到gitee再拉取。
+GitHub上面的Ansible项目如果直接拉到本地速度很慢，可以通过URL形式上传到gitee再拉取。
 
 ```bash
 # 禁用防火墙和SELinux
@@ -332,7 +333,7 @@ Removed symlink /etc/systemd/system/dbus-org.fedoraproject.FirewallD1.service.
 [root@cicd-jenkins-ansible ~]# tar -zxf Python-3.7.7.tgz
 [root@cicd-jenkins-ansible ~]# cd Python-3.7.7
 [root@cicd-jenkins-ansible Python-3.7.7]# ./configure --prefix=/usr/local/ --with-ensurepip=install --with-openssl=/usr/local/openssl --enable-shared LDFLAGS="-Wl,-rpath /usr/local/lib"
-[root@cicd-jenkins-ansible Python-3.10.2]# make && make altinstall
+[root@cicd-jenkins-ansible Python-3.7.7]# make && make altinstall
 
 # pip3.7软链接，之后安装virtualenv
 [root@cicd-jenkins-ansible ~]# ln -s /usr/local/bin/pip3.7 /usr/local/bin/pip
@@ -689,11 +690,11 @@ root      14900  14880  0 21:55 pts/1    00:00:00 grep --color=auto nginx
 LISTEN     0      128          *:80                       *:*                   users:(("nginx",pid=14863,fd=6),("nginx",pid=14862,fd=6),("nginx",pid=14861,fd=6),("nginx",pid=14860,fd=6),("nginx",pid=14859,fd=6))
 ```
 
-> 以上nginx仅用于Ansible Playbook实践测试，实际生产环境`nginx.conf`文件还需要更多的配置和优化。由于本文重点不在nginx，未一一列举。配置文件详解可参考博客：[Nginx配置文件详解](http://www.deemoprobe.com/yunv/nginxconf/)
+以上nginx仅用于Ansible Playbook实践测试，实际生产环境`nginx.conf`文件还需要更多的配置和优化。由于本文重点不在nginx，未一一列举。配置文件详解可参考博客：[Nginx配置文件详解](https://www.deemoprobe.com/yunv/nginxconf/)
 
 ## Jenkins实践
 
-> Jenkins和Ansible使用的是同一台服务器，Ansible安装时Linux环境禁用防火墙和SELinux已操作，如果选择新机器安装Jenkins，需要重新操作
+Jenkins和Ansible使用的是同一台服务器，Ansible安装时Linux环境禁用防火墙和SELinux已操作，如果选择新机器安装Jenkins，需要重新操作
 
 ```bash
 # 导入Jenkins repo和key
@@ -1757,4 +1758,4 @@ Accept-Ranges: bytes
 
 ![20220304234504](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20220304234504.png)
 
-- 至此，基于Jenkins-Ansible-Gitlab的CICD全流程实践完成，总体感受是知识概念都不是很难，但需要关注的细节很多，有所收获。此文纪念。
+至此，基于Jenkins-Ansible-Gitlab的CICD全流程实践完成，总体感受是知识概念都不是很难，但需要关注的细节很多，有所收获。此文纪念。
