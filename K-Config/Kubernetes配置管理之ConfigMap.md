@@ -1,4 +1,4 @@
-# Kubernetes存储之ConfigMap
+# Kubernetes配置管理之ConfigMap
 
 ConfigMap 是一种 API 对象,用来将非机密性的数据保存到健值对中.使用时可以用作环境变量/命令行参数或者存储卷中的配置文件.提供向容器内注入信息的功能.
 

@@ -2,136 +2,123 @@
 
 ## 简介
 
-Kubernetes支持多个虚拟集群, 这些虚拟集群依赖于同一个物理集群, 这些虚拟集群就可以称作`namespace`(中文习惯称为"名称空间"或"命名空间", 个人觉得理解成"域"更为合理一些).
+Kubernetes支持多个虚拟集群，这些虚拟集群依赖于同一个物理集群，这些虚拟集群就可以称作`namespace`（中文习惯称为"名称空间"或"命名空间", 个人觉得理解成"域"更为合理一些）
 
-Namespace有资源隔离的作用, 类似Linux系统的`多用户`的概念(同一物理环境,可以为多用户划分多个相互隔离的操作空间).
+Namespace有资源隔离的作用，类似Linux系统的`多用户`的概念（同一物理环境,可以为多用户划分多个相互隔离的操作空间）
 
-Namespace在多用户之间通过`资源配额(resource-quotas)`进行集群资源的划分.
+Namespace在多用户之间通过`资源配额（resource-quotas）`进行集群资源的划分
 
 ## 使用Namespace
 
 ```bash
 # 位于namespace作用域中的资源
-[root@k8s-master01 ~]# kubectl api-resources --namespaced=true
-NAME                        SHORTNAMES   APIVERSION                     NAMESPACED   KIND
-bindings                                 v1                             true         Binding
-configmaps                  cm           v1                             true         ConfigMap
-endpoints                   ep           v1                             true         Endpoints
-events                      ev           v1                             true         Event
-limitranges                 limits       v1                             true         LimitRange
-persistentvolumeclaims      pvc          v1                             true         PersistentVolumeClaim
-pods                        po           v1                             true         Pod
-podtemplates                             v1                             true         PodTemplate
-replicationcontrollers      rc           v1                             true         ReplicationController
-resourcequotas              quota        v1                             true         ResourceQuota
-secrets                                  v1                             true         Secret
-serviceaccounts             sa           v1                             true         ServiceAccount
-services                    svc          v1                             true         Service
-controllerrevisions                      apps/v1                        true         ControllerRevision
-daemonsets                  ds           apps/v1                        true         DaemonSet
-deployments                 deploy       apps/v1                        true         Deployment
-replicasets                 rs           apps/v1                        true         ReplicaSet
-statefulsets                sts          apps/v1                        true         StatefulSet
-localsubjectaccessreviews                authorization.k8s.io/v1        true         LocalSubjectAccessReview
-horizontalpodautoscalers    hpa          autoscaling/v2                 true         HorizontalPodAutoscaler
-cronjobs                    cj           batch/v1                       true         CronJob
-jobs                                     batch/v1                       true         Job
-leases                                   coordination.k8s.io/v1         true         Lease
-networkpolicies                          crd.projectcalico.org/v1       true         NetworkPolicy
-networksets                              crd.projectcalico.org/v1       true         NetworkSet
-endpointslices                           discovery.k8s.io/v1            true         EndpointSlice
-events                      ev           events.k8s.io/v1               true         Event
-pods                                     metrics.k8s.io/v1beta1         true         PodMetrics
-ingresses                   ing          networking.k8s.io/v1           true         Ingress
-networkpolicies             netpol       networking.k8s.io/v1           true         NetworkPolicy
-poddisruptionbudgets        pdb          policy/v1                      true         PodDisruptionBudget
-rolebindings                             rbac.authorization.k8s.io/v1   true         RoleBinding
-roles                                    rbac.authorization.k8s.io/v1   true         Role
-csistoragecapacities                     storage.k8s.io/v1beta1         true         CSIStorageCapacity
+[root@k8s-master01 ~]# kubectl api-resources --namespaced
+```
+
+[![1][1]][1]
+
+[1]: https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20220313143057.png
+
+```bash
 # 不被namespace限制的资源
 [root@k8s-master01 ~]# kubectl api-resources --namespaced=false
-NAME                              SHORTNAMES   APIVERSION                             NAMESPACED   KIND
-componentstatuses                 cs           v1                                     false        ComponentStatus
-namespaces                        ns           v1                                     false        Namespace
-nodes                             no           v1                                     false        Node
-persistentvolumes                 pv           v1                                     false        PersistentVolume
-mutatingwebhookconfigurations                  admissionregistration.k8s.io/v1        false        MutatingWebhookConfiguration
-validatingwebhookconfigurations                admissionregistration.k8s.io/v1        false        ValidatingWebhookConfiguration
-customresourcedefinitions         crd,crds     apiextensions.k8s.io/v1                false        CustomResourceDefinition
-apiservices                                    apiregistration.k8s.io/v1              false        APIService
-tokenreviews                                   authentication.k8s.io/v1               false        TokenReview
-selfsubjectaccessreviews                       authorization.k8s.io/v1                false        SelfSubjectAccessReview
-selfsubjectrulesreviews                        authorization.k8s.io/v1                false        SelfSubjectRulesReview
-subjectaccessreviews                           authorization.k8s.io/v1                false        SubjectAccessReview
-certificatesigningrequests        csr          certificates.k8s.io/v1                 false        CertificateSigningRequest
-bgpconfigurations                              crd.projectcalico.org/v1               false        BGPConfiguration
-bgppeers                                       crd.projectcalico.org/v1               false        BGPPeer
-blockaffinities                                crd.projectcalico.org/v1               false        BlockAffinity
-clusterinformations                            crd.projectcalico.org/v1               false        ClusterInformation
-felixconfigurations                            crd.projectcalico.org/v1               false        FelixConfiguration
-globalnetworkpolicies                          crd.projectcalico.org/v1               false        GlobalNetworkPolicy
-globalnetworksets                              crd.projectcalico.org/v1               false        GlobalNetworkSet
-hostendpoints                                  crd.projectcalico.org/v1               false        HostEndpoint
-ipamblocks                                     crd.projectcalico.org/v1               false        IPAMBlock
-ipamconfigs                                    crd.projectcalico.org/v1               false        IPAMConfig
-ipamhandles                                    crd.projectcalico.org/v1               false        IPAMHandle
-ippools                                        crd.projectcalico.org/v1               false        IPPool
-kubecontrollersconfigurations                  crd.projectcalico.org/v1               false        KubeControllersConfiguration
-flowschemas                                    flowcontrol.apiserver.k8s.io/v1beta2   false        FlowSchema
-prioritylevelconfigurations                    flowcontrol.apiserver.k8s.io/v1beta2   false        PriorityLevelConfiguration
-nodes                                          metrics.k8s.io/v1beta1                 false        NodeMetrics
-ingressclasses                                 networking.k8s.io/v1                   false        IngressClass
-runtimeclasses                                 node.k8s.io/v1                         false        RuntimeClass
-podsecuritypolicies               psp          policy/v1beta1                         false        PodSecurityPolicy
-clusterrolebindings                            rbac.authorization.k8s.io/v1           false        ClusterRoleBinding
-clusterroles                                   rbac.authorization.k8s.io/v1           false        ClusterRole
-priorityclasses                   pc           scheduling.k8s.io/v1                   false        PriorityClass
-csidrivers                                     storage.k8s.io/v1                      false        CSIDriver
-csinodes                                       storage.k8s.io/v1                      false        CSINode
-storageclasses                    sc           storage.k8s.io/v1                      false        StorageClass
-volumeattachments                              storage.k8s.io/v1                      false        VolumeAttachment
 ```
+
+[![2][2]][2]
+
+[2]: https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20220313143135.png
 
 ### 查看Namespace
 
 ```bash
 # namespace可简写为ns
-[root@k8s-master01 ~]# kubectl get ns
-NAME                   STATUS   AGE
-default                Active   28d
-kube-node-lease        Active   28d
-kube-public            Active   28d
-kube-system            Active   28d
+[root@k8s-master01 ~]# kubectl get ns --show-kind --show-labels 
+NAME                             STATUS   AGE     LABELS
+namespace/default                Active   7d      kubernetes.io/metadata.name=default
+namespace/kube-node-lease        Active   7d      kubernetes.io/metadata.name=kube-node-lease
+namespace/kube-public            Active   7d      kubernetes.io/metadata.name=kube-public
+namespace/kube-system            Active   7d      kubernetes.io/metadata.name=kube-system
 ```
 
-初始状态下,Kubernetes 具有三个名字空间：
+初始状态下，Kubernetes具有四个namespace：
 
-- default 默认的namespace,默认情况下用户创建的资源都是在这个namespace下.
-- kube-node-lease 此名字空间用于与各个节点相关的租期(Lease)对象; 此对象的设计使得集群规模很大时节点心跳检测性能得到提升.
-- kube-public 自动创建且被所有用户可读的namespace(包括未经身份认证的).此namespace通常某些资源在整个集群可公开读取被集群使用.
-- kube-system 由 Kubernetes 系统创建的对象的namespace.
+- default：默认的namespace，默认用户创建的资源都是在这个namespace下
+- kube-node-lease：该namespace用于与各个节点相关的租约（Lease）对象；节点租期允许kubelet发送心跳，由此控制面能够检测到节点故障
+- kube-public：自动创建且所有用户可读的namespace（包括未经身份认证的）
+- kube-system：Kubernetes系统创建的对象所在的namespace
 
 ```bash
 # 列出特定的ns
-[root@k8s-master01 ~]# kubectl get ns default
-NAME      STATUS   AGE
-default   Active   28d
+[root@k8s-master01 ~]# kubectl get ns kube-public 
+NAME          STATUS   AGE
+kube-public   Active   7d
 # 获取特定的ns的描述信息
-# 如果配置了资源配额和资源限制, 可以看到
-[root@k8s-master01 ~]# kubectl describe ns default
-Name:         default
-Labels:       kubernetes.io/metadata.name=default
+[root@k8s-master01 ~]# kubectl describe ns kube-public 
+Name:         kube-public
+Labels:       kubernetes.io/metadata.name=kube-public
 Annotations:  <none>
 Status:       Active
 
 No resource quota.
 
 No LimitRange resource.
+# 如果配置了资源配额，可查看到具体信息，如下
+[root@k8s-master01 ~]# kubectl describe ns quotatest 
+Name:         quotatest
+Labels:       kubernetes.io/metadata.name=quotatest
+Annotations:  <none>
+Status:       Active
+
+Resource Quotas
+  Name:     resource-test
+  Resource  Used  Hard
+  --------  ---   ---
+  pods      1     1
+
+Resource Limits
+ Type                   Resource  Min    Max  Default Request  Default Limit  Max Limit/Request Ratio
+ ----                   --------  ---    ---  ---------------  -------------  -----------------------
+ Container              cpu       100m   1    500m             1              -
+ Container              memory    100Mi  1Gi  256Mi            512Mi          -
+ PersistentVolumeClaim  storage   1Gi    2Gi  -                -              -
+# 查看namespace资源对象说明
+[root@k8s-master01 ~]# kubectl explain ns
+KIND:     Namespace
+VERSION:  v1
+
+DESCRIPTION:
+     Namespace provides a scope for Names. Use of multiple namespaces is
+     optional.
+
+FIELDS:
+   apiVersion   <string>
+     APIVersion defines the versioned schema of this representation of an
+     object. Servers should convert recognized schemas to the latest internal
+     value, and may reject unrecognized values. More info:
+     https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+
+   kind <string>
+     Kind is a string value representing the REST resource this object
+     represents. Servers may infer this from the endpoint the client submits
+     requests to. Cannot be updated. In CamelCase. More info:
+     https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+
+   metadata     <Object>
+     Standard object metadata. More info:
+     https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+
+   spec <Object>
+     Spec defines the behavior of the Namespace. More info:
+     https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+
+   status       <Object>
+     Status describes the current status of a Namespace. More info:
+     https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 ```
 
 ### 创建和删除
 
-> 说明： 避免使用前缀 kube- 创建namespace,因为它是为 Kubernetes 系统namespace保留的.
+> 说明：避免使用前缀`kube-`创建新的namespace，因为它是为Kubernetes系统namespace保留的。
 
 Namespace命名规则:
 
@@ -142,54 +129,60 @@ Namespace命名规则:
 
 ```bash
 # 1. yaml文件方式创建
-[root@k8s-master01 ~]# vim namespace_deemoprobe.yaml
+[root@k8s-master01 ~]# vim new_namespace_deemoprobe.yaml 
 apiVersion: v1
 kind: Namespace
 metadata:
   name: deemoprobe
-[root@k8s-master01 ~]# kubectl create -f namespace_deemoprobe.yaml 
+  annotations:
+    type: create by yaml
+[root@k8s-master01 ~]# kubectl apply -f new_namespace_deemoprobe.yaml 
 namespace/deemoprobe created
-[root@k8s-master01 ~]# kubectl get ns
-NAME                   STATUS   AGE
-deemoprobe             Active   4s
-default                Active   28d
-kube-node-lease        Active   28d
-kube-public            Active   28d
-kube-system            Active   28d
+[root@k8s-master01 ~]# kubectl get ns deemoprobe --show-labels --show-kind 
+NAME                   STATUS   AGE   LABELS
+namespace/deemoprobe   Active   36s   kubernetes.io/metadata.name=deemoprobe
+
 # 2. 命令创建
-[root@k8s-master01 ~]# kubectl create ns test
-namespace/test created
-[root@k8s-master01 ~]# kubectl get ns
-NAME                   STATUS   AGE
-deemoprobe             Active   50s
-default                Active   28d
-kube-node-lease        Active   28d
-kube-public            Active   28d
-kube-system            Active   28d
-test                   Active   4s
-# 删除namespace=test
-[root@k8s-master01 ~]# kubectl delete ns test
-namespace "test" deleted
+[root@k8s-master01 ~]# kubectl create ns deemoprobe2
+namespace/deemoprobe2 created
+[root@k8s-master01 ~]# kubectl get ns deemoprobe2 --show-labels --show-kind 
+NAME                    STATUS   AGE   LABELS
+namespace/deemoprobe2   Active   12s   kubernetes.io/metadata.name=deemoprobe2
+# 删除namespace=deemoprobe2
+[root@k8s-master01 ~]# kubectl delete ns deemoprobe2
+namespace "deemoprobe2" deleted
+[root@k8s-master01 ~]# kubectl get ns deemoprobe2 --show-labels --show-kind 
+Error from server (NotFound): namespaces "deemoprobe2" not found
 ```
 
 ```bash
-# 为请求指定namespace, 例如kubectl get pods --namespace=deemoprobe
-[root@k8s-master01 ~]# kubectl get cm -n deemoprobe
+# 指定namespace操作其他在namespace作用域中的资源，如kubectl get pods --namespace=deemoprobe
+# 简写 -n deemoprobe
+[root@k8s-master01 ~]# kubectl get configmap -n deemoprobe 
 NAME               DATA   AGE
-kube-root-ca.crt   1      2m23s
+kube-root-ca.crt   1      3m33s
+```
+
+### 切换默认namespace
+
+```bash
 # 查看当前所在namespace，新集群如果查不到，就是default
 [root@k8s-master01 ~]# kubectl config view | grep namespace:
-    namespace: default
-# 切换namespace
-[root@k8s-master01 ~]# kubectl config set-context --current --namespace=deemoprobe
+# 设置当前namespace上下文，使得相应namespace成为默认值
+[root@k8s-master01 ~]# kubectl config set-context --current --namespace deemoprobe
 Context "kubernetes-admin@kubernetes" modified.
 [root@k8s-master01 ~]# kubectl config view | grep namespace:
     namespace: deemoprobe
+# 回切
+[root@k8s-master01 ~]# kubectl config set-context --current --namespace default
+Context "kubernetes-admin@kubernetes" modified.
+[root@k8s-master01 ~]# kubectl config view | grep namespace:
+    namespace: default
 ```
 
 ### namespace工具
 
-安装namespace切换工具（kubens）, 实现
+安装namespace管理工具（kubens）更快捷地管理namespace
 
 ```bash
 [root@k8s-master01 ~]# curl -L https://github.com/ahmetb/kubectx/releases/download/v0.9.4/kubens -o /bin/kubens
@@ -231,7 +224,7 @@ default
 
 ## 使用场景
 
-比如: 我们需要"测试"-"开发"-"生产"这几个环境, 可以划分三个Namespace进行操作, 为资源配额准备环境.
+比如：我们需要"测试"-"开发"-"生产"这几个环境，可以划分三个Namespace进行操作，为后续资源配额准备基础环境。
 
 ```bash
 [root@k8s-master01 ~]# vi namespace.yaml 
