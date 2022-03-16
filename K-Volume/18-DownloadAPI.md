@@ -4,9 +4,9 @@
 
 ## 概念
 
-引用Downward API元数据信息的常用方式之一是使用容器的环境变量、它通过在valueFrom字段中嵌套fieldRef或resourceFieldRef字段来引用相应的数据源, 也可以为存储卷注入元数据
+引用Downward API元数据信息的常用方式之一是使用容器的环境变量。它通过在`valueFrom`字段中嵌套`fieldRef`或`resourceFieldRef`字段来引用相应的数据源，也可以为存储卷注入元数据。
 
-Download API作用: 可以通过环境变量或Volume挂载将pod信息注入到容器内部
+Download API作用：可以通过环境变量或Volume挂载将pod信息注入到容器内部。
 
 fieldRef字段引用的信息具体如下：
 
@@ -21,13 +21,14 @@ pod.metadata.labels            #pod对象标签中的指定键的值
 pod.metadata.annotations       #pod对象注解信息中的指定键的值
 ```
 
-## 1. 实例
+## 实例
 
-### 1.1. 注入环境变量
+### 注入环境变量
 
 ```shell
-[root@k8s-master volume]# mkdir dlapi;cd dlapi
-[root@k8s-master dlapi]# vi dlapi_demo.yaml
+[root@k8s-master01 ~]# mkdir -p yamls/volume/downapi
+[root@k8s-master01 ~]# cd yamls/volume/downapi/
+[root@k8s-master01 downapi]# vim dlapi-demo.yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -52,23 +53,23 @@ spec:
           fieldPath: status.podIP
   restartPolicy: Never
 # 创建并查看
-[root@k8s-master dlapi]# kubectl apply -f dlapi_demo.yaml 
+[root@k8s-master01 downapi]# kubectl apply -f dlapi-demo.yaml 
 pod/dlapi-demo created
-[root@k8s-master dlapi]# kubectl get po
-NAME                            READY   STATUS              RESTARTS   AGE
-dlapi-demo                      0/1     Completed           0          47s
+[root@k8s-master01 downapi]# kubectl get po dlapi-demo 
+NAME         READY   STATUS      RESTARTS   AGE
+dlapi-demo   0/1     Completed   0          40s
 # 查看日志, 可见三个注入的环境变量已经打印出来了
-[root@k8s-master dlapi]# kubectl logs dlapi-demo | grep MY
+[root@k8s-master01 downapi]# kubectl logs dlapi-demo | grep MY
 MY_POD_NAMESPACE=default
-MY_POD_IP=172.16.36.111
+MY_POD_IP=172.27.14.230
 MY_POD_NAME=dlapi-demo
 ```
 
-### 1.2. 存储卷注入元数据
+### 存储卷注入元数据
 
 ```shell
 # 创建yaml
-[root@k8s-master dlapi]# vi dlapi_demo_vol.yaml
+[root@k8s-master01 downapi]# vim dlapi-demo-vol.yaml 
 kind: Pod
 apiVersion: v1
 metadata:
@@ -131,25 +132,27 @@ spec:
           resource: requests.memory
           divisor: "1Mi"
         path: "mem_request"
-[root@k8s-master dlapi]# kubectl get po dlapi-demo-vol
+[root@k8s-master01 downapi]# kubectl apply -f dlapi-demo-vol.yaml 
+pod/dlapi-demo-vol created
+[root@k8s-master01 downapi]# kubectl get po dlapi-demo-vol 
 NAME             READY   STATUS    RESTARTS   AGE
-dlapi-demo-vol   1/1     Running   0          20s
+dlapi-demo-vol   1/1     Running   0          9s
 # 查看pod_labels
-[root@k8s-master dlapi]# kubectl exec dlapi-demo-vol -- cat /etc/podinfo/pod_labels
+[root@k8s-master01 downapi]# kubectl exec dlapi-demo-vol -- cat /etc/podinfo/pod_labels
 app="dlapi-demo-vol"
 cluster="downward-api-test-cluster1"
 zone="Shanghai-China"
 # 查看pod_name
-[root@k8s-master dlapi]# kubectl exec dlapi-demo-vol -- cat /etc/podinfo/pod_name
+[root@k8s-master01 downapi]# kubectl exec dlapi-demo-vol -- cat /etc/podinfo/pod_name
 dlapi-demo-vol
 # 查看pod_namespace
-[root@k8s-master dlapi]# kubectl exec dlapi-demo-vol -- cat /etc/podinfo/pod_namespace
+[root@k8s-master01 downapi]# kubectl exec dlapi-demo-vol -- cat /etc/podinfo/pod_namespace
 default
 # 增加新label
-[root@k8s-master dlapi]# kubectl label po dlapi-demo-vol master="192.168.3.43"
+[root@k8s-master01 downapi]# kubectl label po dlapi-demo-vol master="192.168.3.43"
 pod/dlapi-demo-vol labeled
 # 查看pod_labels
-[root@k8s-master dlapi]# kubectl exec dlapi-demo-vol -- cat /etc/podinfo/pod_labels
+[root@k8s-master01 downapi]# kubectl exec dlapi-demo-vol -- cat /etc/podinfo/pod_labels
 app="dlapi-demo-vol"
 cluster="downward-api-test-cluster1"
 master="192.168.3.43"

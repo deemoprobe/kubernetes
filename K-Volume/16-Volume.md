@@ -4,23 +4,19 @@
 
 ## 概念
 
-在容器中的文件在磁盘上是临时存放的,当容器关闭时这些临时文件也会被一并清除.这给容器中运行的特殊应用程序带来一些问题.
+在容器中的文件在磁盘上是临时存放的，当容器关闭时这些临时文件也会被一并清除。这给容器中运行的特殊应用程序带来一些问题。
 
-首先,当容器崩溃时,kubelet 将重新启动容器,容器中的文件将会丢失——因为容器会以干净的状态重建.
+首先，当容器崩溃时，kubelet将重新启动容器，容器中的文件将会丢失——因为容器会以干净的状态重建。其次，当在一个 Pod 中同时运行多个容器时，常常需要在这些容器之间共享文件.Kubernetes 抽象出Volume对象来解决这类问题。
 
-其次,当在一个 Pod 中同时运行多个容器时,常常需要在这些容器之间共享文件.
+Kubernetes Volume卷具有明确的生命周期（与挂载它的 Pod 相同）。因此，Volume比Pod中运行的任何容器的存活期都长，在容器重新启动时数据也会得到保留。当然，当一个Pod不再存在时，Volume也将不再存在。更重要的是，Kubernetes可以支持许多类型的Volume卷，Pod 也能同时使用任意数量的Volume卷。
 
-Kubernetes 抽象出 Volume 对象来解决这两个问题.
+使用volume时，Pod声明中需要提供卷的类型`.spec.volumes`字段和卷挂载的位置`.spec.containers.volumeMounts`字段
 
-Kubernetes Volume卷具有明确的生命周期——与包裹它的 Pod 相同. 因此,Volume比 Pod 中运行的任何容器的存活期都长,在容器重新启动时数据也会得到保留. 当然,当一个 Pod 不再存在时,Volume也将不再存在.更重要的是,Kubernetes 可以支持许多类型的Volume卷,Pod 也能同时使用任意数量的Volume卷.
+## Volume类型
 
-使用卷时,Pod 声明中需要提供卷的类型 (.spec.volumes 字段)和卷挂载的位置 (.spec.containers.volumeMounts 字段).
+目前Kubernetes支持以下类型的Volume，详情解释请见[官网: Kubernetes卷说明](https://kubernetes.io/zh/docs/concepts/storage/volumes/)
 
-## 1. Volume类型
-
-目前, Kubernetes支持以下类型的Volume, 详情解释请见[官网: Kubernetes卷说明](https://kubernetes.io/zh/docs/concepts/storage/volumes/)
-
-```shell
+```bash
 awsElasticBlockStore
 azureDisk
 azureFile
@@ -30,11 +26,9 @@ configMap
 csi
 downwardAPI
 emptyDir
-fc (fibre channel)
+fc (光纤通道)
 flexVolume
-flocker
 gcePersistentDisk
-gitRepo (deprecated)
 glusterfs
 hostPath
 iscsi
@@ -51,29 +45,26 @@ storageos
 vsphereVolume
 ```
 
-常用的类型主要有: Secret、ConfigMap、emptyDir、hostPath
+常用的类型主要有: emptyDir、hostPath、Secret和ConfigMap
 
-## 2. emptyDir
+## emptyDir
 
-当 Pod 指定到某个节点上时,首先创建的是一个 emptyDir 卷,并且只要 Pod 在该节点上运行,卷就一直存在.就像它的名称表示的那样,卷最初是空的.
+当Pod指定到某个节点上时，首先创建的是一个emptyDir卷，并且只要Pod在该节点上运行，卷就一直存在。就像它的名称表示的那样，卷最初是空的。尽管Pod中每个容器挂载emptyDir卷的路径可能相同也可能不同，但是这些容器都可以读写emptyDir卷中相同的文件。如果Pod中有多个容器，其中某个容器重启，不会影响emptyDir卷中的数据。当 Pod 因为某些原因被删除时，emptyDir 卷中的数据也会永久删除。
 
-尽管 Pod 中每个容器挂载 emptyDir 卷的路径可能相同也可能不同,但是这些容器都可以读写 emptyDir 卷中相同的文件.
+注意：容器崩溃并不会导致Pod被从节点上移除，因此容器崩溃时emptyDir卷中的数据是安全的。
 
-如果Pod中有多个容器,其中某个容器重启,不会影响emptyDir 卷中的数据.当 Pod 因为某些原因被删除时,emptyDir 卷中的数据也会永久删除.
+emptyDir用途
 
-注意: 容器崩溃并不会导致 Pod 被从节点上移除,因此容器崩溃时 emptyDir 卷中的数据是安全的.
+- 缓存空间，例如基于磁盘的归并排序
+- 为耗时较长的计算任务提供检查点，以便任务能方便地从崩溃前状态恢复执行
+- 在Web服务器容器服务数据时，保存内容管理器容器获取的文件
 
-### 2.1. emptyDir用途
+### emptyDir示例
 
-- 缓存空间,例如基于磁盘的归并排序
-- 为耗时较长的计算任务提供检查点,以便任务能方便地从崩溃前状态恢复执行
-- 在 Web 服务器容器服务数据时,保存内容管理器容器获取的文件
-
-### 2.2. emptyDir示例
-
-```shell
-[root@k8s-master volume]# mkdir emptydir;cd emptydir
-[root@k8s-master emptydir]# vi pod_emptydir.yaml 
+```bash
+[root@k8s-master01 ~]# mkdir yamls/volume/emptydir -p
+[root@k8s-master01 ~]# cd yamls/volume/emptydir/
+[root@k8s-master01 emptydir]# vim pod-emptydir.yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -97,64 +88,81 @@ spec:
   volumes:
   - name: cache-volume
     emptyDir: {}
-[root@k8s-master emptydir]# kubectl get pod pod-emptydir -o wide
-NAME           READY   STATUS    RESTARTS   AGE    IP             NODE        NOMINATED NODE   READINESS GATES
-pod-emptydir   2/2     Running   0          104s   172.16.36.99   k8s-node1   <none>           <none>
-[root@k8s-master emptydir]# kubectl describe pod pod-emptydir
+[root@k8s-master01 emptydir]# kubectl apply -f pod-emptydir.yaml 
+pod/pod-emptydir created
+[root@k8s-master01 emptydir]# kubectl get po pod-emptydir -owide
+NAME           READY   STATUS    RESTARTS   AGE   IP              NODE           NOMINATED NODE   READINESS GATES
+pod-emptydir   2/2     Running   0          23s   172.18.195.32   k8s-master03   <none>           <none>
+[root@k8s-master01 emptydir]# kubectl describe po pod-emptydir 
 Name:         pod-emptydir
 Namespace:    default
 Priority:     0
-Node:         k8s-node1/192.168.43.20
-Start Time:   Tue, 15 Dec 2020 01:25:21 -0500
+Node:         k8s-master03/192.168.43.185
+Start Time:   Wed, 16 Mar 2022 17:14:47 +0800
 Labels:       <none>
-Annotations:  cni.projectcalico.org/podIP: 172.16.36.99/32
-              cni.projectcalico.org/podIPs: 172.16.36.99/32
+Annotations:  cni.projectcalico.org/containerID: 7e261b1868fbe140d2aa0277c1a5f5dc8b820a14042e6f612c3ddaeb77fbefe5
+              cni.projectcalico.org/podIP: 172.18.195.32/32
+              cni.projectcalico.org/podIPs: 172.18.195.32/32
 Status:       Running
-IP:           172.16.36.99
+IP:           172.18.195.32
 IPs:
-  IP:  172.16.36.99
+  IP:  172.18.195.32
 Containers:
-...
-Volumes:
-  cache-volume:
-    Type:       EmptyDir (a temporary directory that shares a pod lifetime)
-    Medium:     
-    SizeLimit:  <unset>
-  default-token-64lwm:
-    Type:        Secret (a volume populated by a Secret)
-    SecretName:  default-token-64lwm
-    Optional:    false
-QoS Class:       BestEffort
-Node-Selectors:  <none>
-Tolerations:     node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
-                 node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
-Events:
-  Type    Reason     Age    From               Message
-  ----    ------     ----   ----               -------
-  Normal  Scheduled  3m2s   default-scheduler  Successfully assigned default/pod-emptydir to k8s-node1
-  Normal  Pulled     3m     kubelet            Container image "registry.cn-beijing.aliyuncs.com/google_registry/myapp:v1" already present on machine
-  Normal  Created    3m     kubelet            Created container myapp-pod
-  Normal  Started    3m     kubelet            Started container myapp-pod
-  Normal  Pulling    3m     kubelet            Pulling image "registry.cn-beijing.aliyuncs.com/google_registry/busybox:1.24"
-  Normal  Pulled     2m52s  kubelet            Successfully pulled image "registry.cn-beijing.aliyuncs.com/google_registry/busybox:1.24" in 8.320275043s
-  Normal  Created    2m52s  kubelet            Created container busybox-pod
-  Normal  Started    2m52s  kubelet            Started container busybox-pod
+  myapp-pod:
+    Container ID:   containerd://25664b45e687a97527697085777a1df103297b1dd6e986a955f6fbfad472a124
+    Image:          registry.cn-beijing.aliyuncs.com/google_registry/myapp:v1
+    Image ID:       registry.cn-beijing.aliyuncs.com/google_registry/myapp@sha256:9eeca44ba2d410e54fccc54cbe9c021802aa8b9836a0bcf3d3229354e4c8870e
+    Port:           <none>
+    Host Port:      <none>
+    State:          Running
+      Started:      Wed, 16 Mar 2022 17:14:48 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /cache from cache-volume (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-48rl2 (ro)
+  busybox-pod:
+    Container ID:  containerd://ffa1324b2f2afe373ee1de720fb926c93e719d8d078d1e1d0aa01cc772190bd7
+    Image:         registry.cn-beijing.aliyuncs.com/google_registry/busybox:1.24
+    Image ID:      registry.cn-beijing.aliyuncs.com/google_registry/busybox@sha256:f73ae051fae52945d92ee20d62c315306c593c59a429ccbbdcba4a488ee12269
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /bin/sh
+      -c
+      sleep 3600
+    State:          Running
+      Started:      Wed, 16 Mar 2022 17:14:58 +0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /test/cache from cache-volume (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-48rl2 (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+  ...
 ```
 
 创建了`myapp-pod`和`busybox-pod`两个容器
 
-### 2.3. emptyDir验证
+### emptyDir验证
 
-```shell
+```bash
 # 进入myapp-pod容器
-[root@k8s-master emptydir]# kubectl exec -it pod-emptydir -c myapp-pod -- sh
+[root@k8s-master01 emptydir]# kubectl exec -it pod-emptydir -c myapp-pod -- sh
 / # cd /cache/
-/cache # ls
 /cache # echo "myapp-pod" > myapp-pod
 /cache # cat myapp-pod 
 myapp-pod
+/cache # 
 # 进入busybox-pod容器
-[root@k8s-master emptydir]# kubectl exec -it pod-emptydir -c busybox-pod -- sh
+[root@k8s-master01 emptydir]# kubectl exec -it pod-emptydir -c busybox-pod -- sh
 / # cd /test/cache/
 /test/cache # ls
 myapp-pod
@@ -164,47 +172,47 @@ myapp-pod
 /test/cache # cat myapp-pod 
 myapp-pod
 busybox-pod
+/test/cache #
 ```
 
 由上可见,一个Pod中多个容器可共享同一个emptyDir卷
 
-## 3. hostPath
+## hostPath
 
-hostPath 卷能将主机node节点文件系统上的文件或目录挂载到你的 Pod 中. 虽然这不是大多数 Pod 需要的,但是它为一些应用程序提供了强大的逃生舱.
-
-### 3.1. hostPath用途
+hostPath 卷能将主机node节点文件系统上的文件或目录挂载到你的 Pod 中。
 
 - 运行一个需要访问 Docker 引擎内部机制的容器；请使用 hostPath 挂载 /var/lib/docker 路径
-- 在容器中运行 cAdvisor 时,以 hostPath 方式挂载 /sys
-- 允许 Pod 指定给定的 hostPath 在运行 Pod 之前是否应该存在,是否应该创建以及应该以什么方式存在
+- 在容器中运行 cAdvisor 时，以 hostPath 方式挂载 /sys
+- 允许 Pod 指定给定的 hostPath 在运行 Pod 之前是否应该存在，是否应该创建以及应该以什么方式存在
 
-### 3.2. 支持类型
+### 支持类型
 
-除了必需的 path 属性之外,用户可以选择性地为 hostPath 卷指定 type.支持的 type 值如下:
+除了必需的 path 属性之外，用户可以选择性地为 hostPath 卷指定 type。支持的 type 值如下：
 
-| Type取值          | 描述                                                                                                                                                          |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|                   | 空字符串（默认）用于向后兼容,这意味着在安装 hostPath 卷之前不会执行任何检查                                                                                   |
-| DirectoryOrCreate | 如果指定的路径不存在,那么将根据需要创建空目录,权限设置为 0755,具有与 Kubelet 相同的组和所有权                                                                 |
-| Directory         | 给定的路径必须存在                                                                                                                                            |
-| FileOrCreate      | 如果给定路径的文件不存在,那么将在那里根据需要创建空文件,权限设置为 0644,具有与 Kubelet 相同的组和所有权[前提: 文件所在目录必须存在；目录不存在则不能创建文件] |
-| File              | 给定路径上的文件必须存在                                                                                                                                      |
-| Socket            | 在给定路径上必须存在的 UNIX 套接字                                                                                                                            |
-| CharDevice        | 在给定路径上必须存在的字符设备                                                                                                                                |
-| BlockDevice       | 在给定路径上必须存在的块设备                                                                                                                                  |
+| Type取值          | 描述                                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------- |
+|                   | 空字符串（默认）用于向后兼容，这意味着在挂载hostPath卷之前不会执行任何检查                                                |
+| DirectoryOrCreate | 如果指定的路径不存在，那么将根据需要创建空目录，权限设置为0755，具有与 Kubelet 相同的组和所有权                           |
+| Directory         | 给定的路径必须存在                                                                                                        |
+| FileOrCreate      | 如果给定路径的文件不存在，那么根据需要创建空文件，权限为0644，具有与Kubelet相同的组和所有权（前提: 文件所在目录必须存在） |
+| File              | 给定路径上的文件必须存在                                                                                                  |
+| Socket            | 在给定路径上必须存在的 UNIX 套接字                                                                                        |
+| CharDevice        | 在给定路径上必须存在的字符设备                                                                                            |
+| BlockDevice       | 在给定路径上必须存在的块设备                                                                                              |
 
-### 3.3. 注意事项
-
-当使用这种类型的卷时要小心,因为:
+注意事项：
 
 - 具有相同配置（例如从 podTemplate 创建）的多个 Pod 会由于节点上文件的不同而在不同节点上有不同的行为
-- 当 Kubernetes 按照计划添加资源感知的调度时,这类调度机制将无法考虑由 hostPath 卷使用的资源
-- 基础主机上创建的文件或目录只能由 root 用户写入.需要在 特权容器 中以 root 身份运行进程,或者修改主机上的文件权限以便容器能够写入 hostPath 卷
+- 当 Kubernetes 按照计划添加资源感知的调度时，这类调度机制将无法考虑由 hostPath 卷使用的资源
+- 基础主机上创建的文件或目录只能由 root 用户写入。需要在特权容器中以root身份运行进程，或者修改主机上的文件权限以便容器能够写入hostPath卷
 
-### 3.4. hostPath示例
+### hostPath示例
 
-```shell
-[root@k8s-master hostpath]# cat pod_hostpath.yaml 
+```bash
+[root@k8s-master01 emptydir]# cd ..
+[root@k8s-master01 volume]# mkdir hostpath
+[root@k8s-master01 volume]# cd hostpath/
+[root@k8s-master01 hostpath]# vim pod-hostpath.yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -233,48 +241,58 @@ spec:
       # 如果文件不存在则创建. 前提: 文件所在目录必须存在  目录不存在则不能创建文件
       type: FileOrCreate
 # 创建Pod并查看状态
-[root@k8s-master hostpath]# kubectl apply -f pod_hostpath.yaml
+[root@k8s-master01 hostpath]# kubectl apply -f pod-hostpath.yaml 
 pod/pod-hostpath created
-[root@k8s-master hostpath]# kubectl describe po pod-hostpath
-..
+[root@k8s-master01 hostpath]# kubectl describe pod pod-hostpath | grep -i event -A 10
 Events:
-  Type     Reason       Age                 From               Message
-  ----     ------       ----                ----               -------
-  Normal   Scheduled    15m                 default-scheduler  Successfully assigned default/pod-hostpath to k8s-node1
-...
-  Warning  FailedMount  57s (x15 over 15m)  kubelet            MountVolume.SetUp failed for volume "hostpath-file-volume" : open /k8s2/hostpath-file/test.conf: no such file or directory
-# 可以看到由于k8s-node1上未创建/k8s2/hostpath-file目录 pod创建失败了, 一直是ContainerCreating状态
-# 创建目录后
-[root@k8s-master hostpath]# kubectl apply -f pod_hostpath.yaml
-[root@k8s-master hostpath]# kubectl describe po pod-hostpath
+  Type     Reason       Age                From               Message
+  ----     ------       ----               ----               -------
+  Normal   Scheduled    44s                default-scheduler  Successfully assigned default/pod-hostpath to k8s-master03
+  Warning  FailedMount  13s (x7 over 44s)  kubelet            MountVolume.SetUp failed for volume "hostpath-file-volume" : open /k8s2/hostpath-file/test.conf: no such file or directory
+# 可以看到由于k8s-master03上未创建/k8s2/hostpath-file目录 pod创建失败了, 一直是ContainerCreating状态
+# 在k8s-master03主机上创建目录/k8s2/hostpath-file
+[root@k8s-master01 hostpath]# ssh k8s-master03
+Last login: Tue Mar 15 23:52:01 2022 from k8s-master01
+[root@k8s-master03 ~]# mkdir -p /k8s2/hostpath-file
+[root@k8s-master03 ~]# exit
+logout
+Connection to k8s-master03 closed.
+# 创建后再应用一下yaml文件
+[root@k8s-master01 hostpath]# kubectl apply -f pod-hostpath.yaml 
+pod/pod-hostpath configured
+[root@k8s-master01 hostpath]# kubectl get po pod-hostpath -owide
+NAME           READY   STATUS    RESTARTS   AGE     IP              NODE           NOMINATED NODE   READINESS GATES
+pod-hostpath   1/1     Running   0          5m24s   172.18.195.33   k8s-master03   <none>           <none>
+[root@k8s-master01 hostpath]# kubectl describe po pod-hostpath 
 Name:         pod-hostpath
 Namespace:    default
 Priority:     0
-Node:         k8s-node1/192.168.43.20
-Start Time:   Tue, 15 Dec 2020 02:01:28 -0500
+Node:         k8s-master03/192.168.43.185
+Start Time:   Wed, 16 Mar 2022 17:29:40 +0800
 Labels:       <none>
-Annotations:  cni.projectcalico.org/podIP: 172.16.36.101/32
-              cni.projectcalico.org/podIPs: 172.16.36.101/32
+Annotations:  cni.projectcalico.org/containerID: b387d7830097b150b51e584721dc538d2e088eb89d2d6ddbeede8446416cb378
+              cni.projectcalico.org/podIP: 172.18.195.33/32
+              cni.projectcalico.org/podIPs: 172.18.195.33/32
 Status:       Running
-IP:           172.16.36.101
+IP:           172.18.195.33
 IPs:
-  IP:  172.16.36.101
+  IP:  172.18.195.33
 Containers:
   myapp-pod:
-    Container ID:   docker://078b6f513bfab96c6572c17429e210979a563da9d6f55656672b493680b3d2e0
+    Container ID:   containerd://00911225423dbcc01b05b47e7fbef3f64b05de72182d8da9766c46650f54ae44
     Image:          registry.cn-beijing.aliyuncs.com/google_registry/myapp:v1
-    Image ID:       docker-pullable://wangyanglinux/myapp@sha256:9c3dc30b5219788b2b8a4b065f548b922a34479577befb54b03330999d30d513
+    Image ID:       registry.cn-beijing.aliyuncs.com/google_registry/myapp@sha256:9eeca44ba2d410e54fccc54cbe9c021802aa8b9836a0bcf3d3229354e4c8870e
     Port:           <none>
     Host Port:      <none>
     State:          Running
-      Started:      Tue, 15 Dec 2020 02:17:52 -0500
+      Started:      Wed, 16 Mar 2022 17:33:50 +0800
     Ready:          True
     Restart Count:  0
     Environment:    <none>
     Mounts:
       /test-k8s/hostpath-dir from hostpath-dir-volume (rw)
       /test/hostpath-file/test.conf from hostpath-file-volume (rw)
-      /var/run/secrets/kubernetes.io/serviceaccount from default-token-64lwm (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-jlhk2 (ro)
 Conditions:
   Type              Status
   Initialized       True 
@@ -290,100 +308,135 @@ Volumes:
     Type:          HostPath (bare host directory volume)
     Path:          /k8s2/hostpath-file/test.conf
     HostPathType:  FileOrCreate
-  default-token-64lwm:
-    Type:        Secret (a volume populated by a Secret)
-    SecretName:  default-token-64lwm
-    Optional:    false
-QoS Class:       BestEffort
-Node-Selectors:  <none>
-Tolerations:     node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
-                 node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+  kube-api-access-jlhk2:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
 Events:
-  Type     Reason       Age                   From               Message
-  ----     ------       ----                  ----               -------
-  Normal   Scheduled    17m                   default-scheduler  Successfully assigned default/pod-hostpath to k8s-node1
-  Warning  FailedMount  3m32s (x5 over 14m)   kubelet            Unable to attach or mount volumes: unmounted volumes=[hostpath-file-volume], unattached volumes=[hostpath-dir-volume hostpath-file-volume default-token-64lwm]: timed out waiting for the condition
-  Warning  FailedMount  2m40s (x15 over 17m)  kubelet            MountVolume.SetUp failed for volume "hostpath-file-volume" : open /k8s2/hostpath-file/test.conf: no such file or directory
-  Warning  FailedMount  76s (x2 over 12m)     kubelet            Unable to attach or mount volumes: unmounted volumes=[hostpath-file-volume], unattached volumes=[hostpath-file-volume default-token-64lwm hostpath-dir-volume]: timed out waiting for the condition
-  Normal   Pulled       37s                   kubelet            Container image "registry.cn-beijing.aliyuncs.com/google_registry/myapp:v1" already present on machine
-  Normal   Created      37s                   kubelet            Created container myapp-pod
-  Normal   Started      36s                   kubelet            Started container myapp-pod
-# pod被调度到了k8s-node1上
+  Type     Reason       Age                 From               Message
+  ----     ------       ----                ----               -------
+  Normal   Scheduled    6m                  default-scheduler  Successfully assigned default/pod-hostpath to k8s-master03
+  Warning  FailedMount  3m57s               kubelet            Unable to attach or mount volumes: unmounted volumes=[hostpath-file-volume], unattached volumes=[hostpath-file-volume kube-api-access-jlhk2 hostpath-dir-volume]: timed out waiting for the condition
+  Warning  FailedMount  3m52s (x9 over 6m)  kubelet            MountVolume.SetUp failed for volume "hostpath-file-volume" : open /k8s2/hostpath-file/test.conf: no such file or directory
+  Normal   Pulled       110s                kubelet            Container image "registry.cn-beijing.aliyuncs.com/google_registry/myapp:v1" already present on machine
+  Normal   Created      110s                kubelet            Created container myapp-pod
+  Normal   Started      110s                kubelet            Started container myapp-pod
+# pod被调度到了k8s-master03上并处于运行状态
 ```
 
-### 3.5. 验证hostPath
+### 验证hostPath
 
-#### 3.5.1. 宿主机中操作
+#### 宿主机中操作
 
-pod被调度到了k8s-node1上, 切换到k8s-node1
+切换到k8s-master03节点
 
-```shell
-# 可以看到已经创建了空的test.conf文件
-[root@k8s-node1 hostpath-file]# pwd
-/k8s2/hostpath-file
-[root@k8s-node1 hostpath-file]# ll
+```bash
+# 查看宿主机空目录和空文件
+[root@k8s-master01 hostpath]# ssh k8s-master03
+Last login: Wed Mar 16 17:31:58 2022 from k8s-master01
+[root@k8s-master03 ~]# ll /k8s/hostpath-dir/
 total 0
--rw-r--r-- 1 root root 0 Dec 15 02:17 test.conf
-# 对挂载的目录操作
-[root@k8s-node1 hostpath-dir]# pwd
-/k8s/hostpath-dir
-[root@k8s-node1 hostpath-dir]# echo "dir" >> k8s.info
-[root@k8s-node1 hostpath-dir]# date >> k8s.info
-[root@k8s-node1 hostpath-dir]# cat k8s.info 
-dir
-Tue Dec 15 02:31:23 EST 2020
+[root@k8s-master03 ~]# ll /k8s2/hostpath-file/test.conf 
+-rw-r--r-- 1 root root 0 Mar 16 17:33 /k8s2/hostpath-file/test.conf
+# 对空目录进行操作
+[root@k8s-master03 ~]# touch /k8s/hostpath-dir/file1.txt
 # 对挂载的文件操作
-[root@k8s-node1 hostpath-file]# pwd
-/k8s2/hostpath-file
-[root@k8s-node1 hostpath-file]# echo "file" >> test.conf 
-[root@k8s-node1 hostpath-file]# date >> test.conf 
-[root@k8s-node1 hostpath-file]# cat test.conf 
-file
-Tue Dec 15 02:33:17 EST 2020
+[root@k8s-master03 ~]# echo "Message from host: k8s-master03" >> /k8s2/hostpath-file/test.conf 
 ```
 
-#### 3.5.2. 容器内操作
+#### 容器内操作
 
-切换到k8s-master
+切换到k8s-master01主节点
 
-```shell
+```bash
+[root@k8s-master03 ~]# exit
+logout
+Connection to k8s-master03 closed.
 # 进入容器内操作
-[root@k8s-master hostpath]# kubectl exec -it pod-hostpath -c myapp-pod -- /bin/sh
-##### 对挂载的目录操作
+[root@k8s-master01 hostpath]# kubectl exec -it pod-hostpath -c myapp-pod -- sh
 / # cd /test-k8s/hostpath-dir
 /test-k8s/hostpath-dir # ls
-k8s.info
-/test-k8s/hostpath-dir # cat k8s.info 
-dir
-Tue Dec 15 02:31:23 EST 2020
-/test-k8s/hostpath-dir # date >> k8s.info 
-/test-k8s/hostpath-dir # cat k8s.info 
-dir
-Tue Dec 15 02:31:23 EST 2020
-Tue Dec 15 07:36:20 UTC 2020
-##### 对挂载的文件操作
+file1.txt
+/test-k8s/hostpath-dir # echo "Message from container: myapp-pod" >> file1.txt 
 /test-k8s/hostpath-dir # cd /test/hostpath-file/
 /test/hostpath-file # ls
 test.conf
 /test/hostpath-file # cat test.conf 
-file
-Tue Dec 15 02:33:17 EST 2020
-/test/hostpath-file # date >> test.conf 
+Message from host: k8s-master03
+/test/hostpath-file # echo "Message from container: myapp-pod" >> test.conf 
 /test/hostpath-file # cat test.conf 
-file
-Tue Dec 15 02:33:17 EST 2020
-Tue Dec 15 07:36:46 UTC 2020
+Message from host: k8s-master03
+Message from container: myapp-pod
 
-# k8s-node1节点中的对应hostPath中文件情况已同步
-[root@k8s-node1 hostpath-file]# pwd
-/k8s2/hostpath-file
-[root@k8s-node1 hostpath-file]# cat test.conf 
-file
-Tue Dec 15 02:33:17 EST 2020
-Tue Dec 15 07:36:46 UTC 2020
-[root@k8s-node1 hostpath-file]# cd /k8s/hostpath-dir/
-[root@k8s-node1 hostpath-dir]# cat k8s.info 
-dir
-Tue Dec 15 02:31:23 EST 2020
-Tue Dec 15 07:36:20 UTC 2020
+# 切换到主机k8s-master03查看数据卷同步情况
+[root@k8s-master01 hostpath]# ssh k8s-master03
+Last login: Wed Mar 16 17:39:57 2022 from k8s-master01
+[root@k8s-master03 ~]# cat /k8s/hostpath-dir/file1.txt 
+Message from container: myapp-pod
+[root@k8s-master03 ~]# cat /k8s2/hostpath-file/test.conf 
+Message from host: k8s-master03
+Message from container: myapp-pod
+```
+
+## 挂载NFS
+
+需要结合NFS博客实践：[Kubernetes存储之搭建NFS](https://www.deemoprobe.com/yunv/k-nfs/)，博客中k8s-node02作为nfs服务的客户端。
+
+```bash
+[root@k8s-master01 hostpath]# cd ..
+[root@k8s-master01 volume]# mkdir nfs;cd nfs
+# 先给k8s-node02打上nfs=bingo的标签
+[root@k8s-master01 ~]# kubectl label nodes k8s-node02 nfs=bingo
+node/k8s-node02 labeled
+[root@k8s-master01 nfs]# vim pod-nfs.yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-nfs
+  namespace: default
+spec:
+  containers:
+  - name: myapp-pod
+    image: registry.cn-beijing.aliyuncs.com/google_registry/myapp:v1
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - mountPath: /nfs/data # 容器挂载目录
+      name: nfs-volume
+  nodeSelector:
+    nfs: bingo # 调度到nfs客户端
+  volumes:
+  - name: nfs-volume
+    nfs: # nfs主机和目录
+      server: 192.168.43.212
+      path: /data
+[root@k8s-master01 nfs]# kubectl apply -f pod-nfs.yaml 
+pod/pod-nfs created
+[root@k8s-master01 nfs]# kubectl get po pod-nfs -owide
+NAME      READY   STATUS    RESTARTS   AGE     IP              NODE         NOMINATED NODE   READINESS GATES
+pod-nfs   1/1     Running   0          3m25s   172.27.14.220   k8s-node02   <none>           <none>
+# 进入容器查看，可见NFS搭建博客中的文件均已共享到/nfs/data目录，这些文件是在Kubernetes存储之搭建NFS博客中创建的
+[root@k8s-master01 nfs]# kubectl exec -it pod-nfs -c myapp-pod -- sh
+/ # cd /nfs/data/
+/nfs/data # ls
+client      client.log  server      server.log
+/nfs/data # cat client.log 
+Message from nfs-client: k8s-node02
+/nfs/data # cat server.log 
+Message from nfs-server: nfs-server
+# 添加容器访问记录
+/nfs/data # echo "Message from container: myapp-pod in k8s-node02" >> client.log 
+
+# 去nfs服务端查看
+[root@nfs-server ~]# cd /data/
+[root@nfs-server data]# ls
+client  client.log  server  server.log
+[root@nfs-server data]# cat client.log 
+Message from nfs-client: k8s-node02
+Message from container: myapp-pod in k8s-node02
 ```
