@@ -1,5 +1,9 @@
 # Kubernetes存储之PV-PVC
 
+2021-0806
+
+## 概念
+
 为了方便管理存储, PV持久卷子系统为用户和管理员提供了一个API, 该API从如何使用存储中抽象出如何提供存储的详细信息.为此, 引入了两个新的API资源: PV 和 PVC
 
 PV-PersistentVolume([pərˈsɪstənt] [ˈvɒljuːm]): 持久卷

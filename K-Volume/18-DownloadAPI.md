@@ -1,5 +1,9 @@
 # Kubernetes存储之Download API
 
+2021-0808
+
+## 概念
+
 引用Downward API元数据信息的常用方式之一是使用容器的环境变量、它通过在valueFrom字段中嵌套fieldRef或resourceFieldRef字段来引用相应的数据源, 也可以为存储卷注入元数据
 
 Download API作用: 可以通过环境变量或Volume挂载将pod信息注入到容器内部
