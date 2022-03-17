@@ -1,5 +1,7 @@
 # Kubernetes网络之Ingress
 
+2021-0818
+
 ## 概念
 
 > 本文通过Helm部署Nginx Ingress Controller

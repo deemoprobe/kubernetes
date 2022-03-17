@@ -1,5 +1,7 @@
 # Kubernetes网络之Service和DNS
 
+2021-0816
+
 Service是一种Pod的服务发现策略，其他Pod可以通过这个Service访问到这个Service代理的Pod。
 
 相对于Pod而言，它会有一个固定的名称，一旦创建就固定不变。包含服务的访问IP（Cluster IP）和端口`Kubernetes的Endpoints Controller会生成一个Endpoints对象, 记录 Endpoints=ClusterIP+Port`，通过`Selector`选择与之匹配的Pod。
