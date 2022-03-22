@@ -1,6 +1,6 @@
 # Kubernetes网络之Service和DNS
 
-2021-0816
+2021-0814
 
 Service是一种Pod的服务发现策略，其他Pod可以通过这个Service访问到这个Service代理的Pod。
 
