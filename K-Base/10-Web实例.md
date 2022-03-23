@@ -7,7 +7,7 @@
 
 ## 创建MySQL
 
-```shell
+```bash
 vi mysql.yaml
 
 apiVersion: apps/v1
@@ -78,7 +78,7 @@ kubectl describe po mysql
 
 ## 创建 Web
 
-```shell
+```bash
 vi web.yaml
 
 apiVersion: apps/v1

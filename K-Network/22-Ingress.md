@@ -34,7 +34,7 @@ Helm本质就是让k8s的应用管理(Deployment、Service等)可配置,能动�
 
 > 说明: Helm3.x 版本已经不需要再安装tiller(之前老版本中的Helm仓库的服务端), 直接安装配置好仓库就可以使用了
 
-```shell
+```bash
 # 在官方(https://github.com/helm/helm/releases)下载想要的的版本, 当前(2022-01-21)最新稳定版 V3.7.2
 # 解压并配置
 [root@k8s-master01 ~]# tar -zxvf helm-v3.7.2-linux-amd64.tar.gz 
@@ -59,7 +59,7 @@ ingress-nginx   https://kubernetes.github.io/ingress-nginx
 
 ## Helm部署 Nginx-Ingress
 
-```shell
+```bash
 # 查看nginx-ingress资源包，显示为最新版
 [root@k8s-master01 ingress]# helm search repo ingress-nginx
 NAME                            CHART VERSION   APP VERSION     DESCRIPTION                                       
@@ -389,7 +389,7 @@ nginx-ingress-nginx-ingress-controller-default-backend   ClusterIP      192.168.
 
 ### 创建deploy-svc1
 
-```shell
+```bash
 [root@k8s-master ingress]# vi deploy-svc1.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -470,7 +470,7 @@ myapp-deploy1-6c468d6b6c-cq44z
 
 ### 创建deploy-svc2
 
-```shell
+```bash
 [root@k8s-master ingress]# vi deploy-svc2.yaml 
 apiVersion: apps/v1
 kind: Deployment
@@ -539,7 +539,7 @@ myapp-deploy2-5fffdcccd5-25qz4
 
 ### HTTP代理访问
 
-```shell
+```bash
 [root@k8s-master ingress]# vi ingress-http.yaml
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
@@ -615,7 +615,7 @@ hosts文件权限更改图:
 
 添加信息如下:
 
-```shell
+```bash
 # kubernetes ingress
 172.42.42.101   www.nginx-ingress.com info.nginx-ingress.com
 ```
@@ -632,7 +632,7 @@ hosts文件权限更改图:
 ![20210112100628](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112100628.png)
 ![20210112101051](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112101051.png)
 
-```shell
+```bash
 # 可以看到访问的hostname(即PodName)是当前在运行的PodName
 [root@k8s-master cert]# kubectl get po
 NAME                                                              READY   STATUS    RESTARTS   AGE
@@ -646,7 +646,7 @@ myapp-deploy2-5fffdcccd5-vpcj9                                    1/1     Runnin
 
 #### 创建SSL证书
 
-```shell
+```bash
 [root@k8s-master kubernetes]# mkdir cert;cd cert
 [root@k8s-master cert]# openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/C=CN/ST=BJ/L=BeiJing/O=BTC/OU=MOST/CN=deemoprobe/emailAddress=ca@test.com"
 Generating a 2048 bit RSA private key
@@ -662,7 +662,7 @@ secret/tls-secret created
 
 #### 创建ingress https
 
-```shell
+```bash
 [root@k8s-master cert]# cd ../ingress/
 [root@k8s-master ingress]# vi ingress-https.yaml 
 apiVersion: networking.k8s.io/v1beta1
@@ -721,7 +721,7 @@ nginx-https   <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.168.43
 ![20210112102915](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112102915.png)
 ![20210112102931](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/20210112102931.png)
 
-```shell
+```bash
 # 可以看到访问的hostname(即PodName)是当前在运行的PodName
 [root@k8s-master cert]# kubectl get po
 NAME                                                              READY   STATUS    RESTARTS   AGE
@@ -735,7 +735,7 @@ myapp-deploy2-5fffdcccd5-vpcj9                                    1/1     Runnin
 
 #### 准备
 
-```shell
+```bash
 [root@k8s-master ingress]# yum install -y httpd
 [root@k8s-master ingress]# htpasswd -c auth deemoprobe
 New password: #输入密码
@@ -777,7 +777,7 @@ type: Opaque
 
 #### 创建ingress
 
-```shell
+```bash
 [root@k8s-master ingress]# vi nginx-ingress-basicauth.yaml
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
@@ -815,7 +815,7 @@ nginx-https         <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.
 
 添加信息如下(在后面添加auth.nginx-ingress.com即可):
 
-```shell
+```bash
 # kubernetes ingress
 172.42.42.101   www.nginx-ingress.com info.nginx-ingress.com auth.nginx-ingress.com
 ```
@@ -838,7 +838,7 @@ nginx-https         <none>   www.nginx-ingress.com,info.nginx-ingress.com   192.
 | nginx.ingress.kubernetes.io/app-root           | 定义应用程序根目录,Controller在“/”上下文中必须重定向该根目录  | String |
 | nginx.ingress.kubernetes.io/use-regex          | 指示Ingress上定义的路径是否使用正则表达式                     | Bool   |
 
-```shell
+```bash
 # 创建rewrite=ingress
 [root@k8s-master ingress]# vi nginx-ingress-rewrite.yaml 
 apiVersion: networking.k8s.io/v1beta1
@@ -873,7 +873,7 @@ rewrite             <none>   rewrite.nginx-ingress.com                          
 
 添加信息如下(在后面添加rewrite.nginx-ingress.com即可):
 
-```shell
+```bash
 # kubernetes ingress
 172.42.42.101   www.nginx-ingress.com info.nginx-ingress.com auth.nginx-ingress.com rewrite.nginx-ingress.com
 ```
@@ -886,7 +886,7 @@ rewrite             <none>   rewrite.nginx-ingress.com                          
 
 #### CentOS本地系统访问
 
-```shell
+```bash
 # 先添加本地hosts
 [root@k8s-master ingress]# cat /etc/hosts
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4

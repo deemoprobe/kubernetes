@@ -2,7 +2,7 @@
 
 ## 1.RBAC
 
-```shell
+```bash
 # Context
 You have been asked to create a new ClusterRole for a deployment pipeline and bind it to a specific ServiceAccount scoped to a specific namespace.
 # Task
@@ -15,19 +15,19 @@ Create a new ServiceAccount named cicd-token in the existing namespace app-team1
 
 [解题参考:RBAC鉴权](https://kubernetes.io/zh/docs/reference/access-authn-authz/rbac/)
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context k8s
 ```
 
-```shell
+```bash
 ******* Answer *******
 ~ kubectl create clusterrole deployment-clusterrole --verb=create --resource=deployments,statefulsets,daemonsets
 ~ kubectl -n app-team1 create serviceaccount cicd-token
 ~ kubectl -n app-team1 create rolebinding deployment-rolebinding --clusterrole=deployment-clusterrole --serviceaccount=app-team1:cicd-token
 ```
 
-```shell
+```bash
 # 如果没有限定namespace,则需要使用clusterrolebinding
 ~ kubectl create clusterrolebinding deployment-clusterrolebinding --clusterrole=deployment-clusterrole --serviceaccount=app-team1:cicd-token
 # clusterrole和clusterrolebinding不受namespace限制，不需要加 -n namespace
@@ -35,14 +35,14 @@ Create a new ServiceAccount named cicd-token in the existing namespace app-team1
 
 ## 2.cordon & drain
 
-```shell
+```bash
 # Task
 Set the node named ek8s-node-1 as unavailable and reschedule all the pods running on it.
 ```
 
 [解题参考:Cordon&Drain](https://kubernetes.io/zh/docs/reference/kubectl/cheatsheet/#%E4%B8%8E%E8%8A%82%E7%82%B9%E5%92%8C%E9%9B%86%E7%BE%A4%E8%BF%9B%E8%A1%8C%E4%BA%A4%E4%BA%92)
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context ek8s
 ******* Answer *******
@@ -52,7 +52,7 @@ Set the node named ek8s-node-1 as unavailable and reschedule all the pods runnin
 
 ## 3.Cluster upgrade
 
-```shell
+```bash
 # Task
 Given an existing Kubernetes cluster running version 1.22.3, upgrade all the Kubernetes control plane and node components on the master node only to version 1.22.4
 You can also expected to upgrade kubelet and kubectl on the master node.
@@ -61,7 +61,7 @@ Be sure drain the master node before upgrading it and uncordon it after upgradin
 
 [解题参考:升级集群](https://kubernetes.io/zh/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/)
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context mk8s
 ******* Answer *******
@@ -89,7 +89,7 @@ Be sure drain the master node before upgrading it and uncordon it after upgradin
 
 ## 4.ETCD backup and restore
 
-```shell
+```bash
 # Task
 First, create a snapshot of the existing etcd instance running at https://127.0.0.1:2379, saving the snapshot to /srv/data/etcd-snapshot.db.Creating a snapshot of the given instance is expected to complete in seconds.If the operation seems to hang, something is likely wrong with your command. Use ctrl+c to cancel the operation and try again.
 
@@ -101,7 +101,7 @@ Next, restore an existing, previous snapshot located at /var/lib/backup/etcd-sna
 
 [解题参考:ETCD备份与恢复](https://kubernetes.io/zh/docs/tasks/administer-cluster/configure-upgrade-etcd/#%E4%BD%BF%E7%94%A8-etcdctl-%E9%80%89%E9%A1%B9%E7%9A%84%E5%BF%AB%E7%85%A7)
 
-```shell
+```bash
 ******* Prepare *******
 # 如果没有etcdctl命令，安装一下etcd-client
 ~ apt-get install etcd-client
@@ -112,7 +112,7 @@ Next, restore an existing, previous snapshot located at /var/lib/backup/etcd-sna
 
 ## 5.NetworkPolicy
 
-```shell
+```bash
 ******* Type1 *******
 # Task
 Create a new NetworkPolicy name allow-port-from-namespace that allows Pods in the existing namespace internal to connect to port 9000 of other Pods in the same namespace.
@@ -124,7 +124,7 @@ Ensure that the new NetworkPolicy:
 
 [解题参考:网络策略](https://kubernetes.io/zh/docs/concepts/services-networking/network-policies/#networkpolicy-resource>)
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context hk8s
 ******* Answer1 *******
@@ -147,7 +147,7 @@ spec:
 ~ kubectl apply -f networkpolicy.yaml
 ```
 
-```shell
+```bash
 ******* Type2 *******
 # Task
 Create a new NetworkPolicy named allow-port-from-namespace in the existing namesapce internal that allows Pods in namespace big-corp to connect to port 9000 of the Pods in namespace internal.
@@ -157,7 +157,7 @@ Ensure that the new NetworkPolicy:
 - does not allow access from Pods not in namespace big-corp
 ```
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context hk8s
 ******* Answer2 *******
@@ -185,7 +185,7 @@ spec:
 ~ kubectl label ns big-corp name=big-corp
 ```
 
-```shell
+```bash
 ******* Type3 *******
 # Task
 Create a new NetworkPolicy named allow-port-from-namespace in the existing namesapce internal that allows Pods in namespace internal to connect to port 9000 of the Pods in namespace big-corp.
@@ -195,7 +195,7 @@ Ensure that the new NetworkPolicy:
 - does not allow access from Pods not in namespace internal
 ```
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context hk8s
 ******* Answer3 *******
@@ -231,7 +231,7 @@ spec:
 
 ## 6.Service
 
-```shell
+```bash
 # Task
 Reconfigure the existing deployment front-end and add a port specification name http exposing port 80/tcp of the existing container nginx.
 
@@ -242,7 +242,7 @@ Configure the new service to also expose the individual Pods via a NodePort on t
 
 [解题参考:创建Service](https://kubernetes.io/zh/docs/concepts/services-networking/connect-applications-service/)
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context k8s
 ******* Answer *******
@@ -260,7 +260,7 @@ Configure the new service to also expose the individual Pods via a NodePort on t
 
 ## 7.Ingress
 
-```shell
+```bash
 # Task
 Create a new nginx Ingress resource as follows:
 - Name: pong
@@ -273,7 +273,7 @@ The availability of service hi can be checked using the following command, which
 
 [解题参考:Ingress](https://kubernetes.io/zh/docs/concepts/services-networking/ingress/#the-ingress-resource)
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context k8s
 ******* Answer *******
@@ -299,14 +299,14 @@ spec:
 
 ## 8.Replicas Deployment
 
-```shell
+```bash
 # Task
 Scale the deployment presentation to 3 pods.
 ```
 
 [解题参考:资源伸缩](https://kubernetes.io/zh/docs/reference/kubectl/cheatsheet/#%E5%AF%B9%E8%B5%84%E6%BA%90%E8%BF%9B%E8%A1%8C%E4%BC%B8%E7%BC%A9)
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context k8s
 ******* Answer *******
@@ -315,7 +315,7 @@ Scale the deployment presentation to 3 pods.
 
 ## 9.Schedule Pod
 
-```shell
+```bash
 # Task
 Schedule a pod as follows:
 - Name: nginx-kusc00401
@@ -325,7 +325,7 @@ Schedule a pod as follows:
 
 [解题参考:调度Pod](https://kubernetes.io/zh/docs/concepts/scheduling-eviction/assign-pod-node/)
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context k8s
 ******* Answer *******
@@ -346,12 +346,12 @@ spec:
 
 ## 10.Check node
 
-```shell
+```bash
 # Task
 Check to see how many nodes are ready(not including nodes tainted NoSchedule) and write the number to /opt/KUSC00402/kusc00402.txt
 ```
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context k8s
 ******* Answer *******
@@ -362,14 +362,14 @@ Check to see how many nodes are ready(not including nodes tainted NoSchedule) an
 
 ## 11.Images Pod
 
-```shell
+```bash
 Create a pod named kucc8 with a single app container for each of the following images rinning inside(there may be between 1 and 4 images specified):
 nginx + redis + memcached + consul
 ```
 
 [解题参考:创建Pod](https://kubernetes.io/zh/docs/concepts/scheduling-eviction/assign-pod-node/#%E6%AD%A5%E9%AA%A4%E4%BA%8C-%E6%B7%BB%E5%8A%A0-nodeselector-%E5%AD%97%E6%AE%B5%E5%88%B0-pod-%E9%85%8D%E7%BD%AE%E4%B8%AD)
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context k8s
 ******* Answer *******
@@ -393,14 +393,14 @@ spec:
 
 ## 12.PV
 
-```shell
+```bash
 # Task
 Create a persistent volume with name app-config, of capacity 1Gi and access mode ReadOnlyMany. The type of volume is hostPath and its location is /srv/app-config
 ```
 
 [解题参考:创建PV](https://kubernetes.io/zh/docs/tasks/configure-pod-container/configure-persistent-volume-storage/#%E5%88%9B%E5%BB%BA-persistentvolume)
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context hk8s
 ******* Answer *******
@@ -423,7 +423,7 @@ spec:
 
 ## 13.PVC
 
-```shell
+```bash
 # Task
 Create a new PersistentVloumeClaim:
 - Name: pv-volume
@@ -442,7 +442,7 @@ Finally, using kubectl edit or kubectl patch expand the PersistentVolumeClaim to
 
 [解题参考:创建PVC](https://kubernetes.io/zh/docs/tasks/configure-pod-container/configure-persistent-volume-storage/#%E5%88%9B%E5%BB%BA-persistentvolumeclaim)
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context ok8s
 ******* Answer *******
@@ -482,14 +482,14 @@ spec:
 
 ## 14.Save Pod Error Log
 
-```shell
+```bash
 # Task
 Monitor the logs of pod bar and:
 - Extract log lines corresponding to error unable-to-access-website
 - Write them to /opt/KUTR00101/bar
 ```
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context k8s
 ******* Answer *******
@@ -498,7 +498,7 @@ Monitor the logs of pod bar and:
 
 ## 15.SideCar
 
-```shell
+```bash
 # Context
 Without changing its existing containers, anexisting Pod needs to be integrated into Kubernetes built-in logging architecure(e.g. kubectl logs). Adding a streaming sidecar conatainer is a good and common way to accomplish this requirement.
 # Task
@@ -510,7 +510,7 @@ Do not modify the existing container. Do not modify the path of the log file, bo
 
 [解题参考:日志分离Sidecar](https://kubernetes.io/zh/docs/concepts/cluster-administration/logging/#sidecar-container-with-logging-agent)
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context k8s
 ******* Answer *******
@@ -556,12 +556,12 @@ spec:
 
 ## 16.Top
 
-```shell
+```bash
 # Task
 From the pod label name=cpu-loader, find pods running high CPU wordloads and write the name of the pod consuming most CPU to the file /opt/KUTR00401/KUTR00401.txt(which already exists)
 ```
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context k8s
 ******* Answer *******
@@ -572,7 +572,7 @@ From the pod label name=cpu-loader, find pods running high CPU wordloads and wri
 
 ## 17.Node NotReady Check
 
-```shell
+```bash
 # Task
 A Kubernetes work node named wk8s-node-0 is in state NotReady. Investigate why this is the case, and perform any appropriate step to bring the node to a Ready state., ensuring that any changes are made permanent.
 
@@ -580,7 +580,7 @@ You can ssh to the failed node using: ssh wk8s-node-0
 You can assume elevated privileges on the node with the following command: sudo -i
 ```
 
-```shell
+```bash
 ******* Prepare *******
 ~ kubectl config use-context wk8s
 ******* Answer *******

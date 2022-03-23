@@ -4,7 +4,7 @@
 
 项目地址: <https://github.com/kubernetes-sigs/metrics-server>
 
-```shell
+```bash
 # 默认情况下下面资源指标是无法获取的
 [root@k8s-master ingress]# kubectl top node
 error: Metrics API not available
@@ -14,7 +14,7 @@ error: Metrics API not available
 
 获取metrics-server-amd64镜像
 
-```shell
+```bash
 # 在集群所有节点都需要执行
 docker pull registry.cn-beijing.aliyuncs.com/google_registry/metrics-server-amd64:v0.3.6
 docker tag  registry.cn-beijing.aliyuncs.com/google_registry/metrics-server-amd64:v0.3.6 k8s.gcr.io/metrics-server-amd64:v0.3.6
@@ -23,7 +23,7 @@ docker rmi  registry.cn-beijing.aliyuncs.com/google_registry/metrics-server-amd6
 
 配置metrics-server.yaml文件
 
-```shell
+```bash
 [root@k8s-master kubernetes]# mkdir monitor;cd monitor
 [root@k8s-master monitor]# vi metrics-server.yaml 
 args:
@@ -34,7 +34,7 @@ args:
 
 通过helm部署metrics-server
 
-```shell
+```bash
 # 添加官方最新的Helm仓库
 [root@k8s-master monitor]# helm repo add stable https://charts.helm.sh/stable
 "stable" has been added to your repositories

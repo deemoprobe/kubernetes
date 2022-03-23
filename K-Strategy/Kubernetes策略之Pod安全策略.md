@@ -112,7 +112,7 @@ Pod 必须基于 PSP 验证每个字段.
 
 下面是一个 Pod 安全策略的例子,所有字段的设置都被允许:
 
-```shell
+```bash
 # 查看PodSecurityPolicy apiVersion和描述信息, 简写为psp
 [root@k8s-master apiserver]# kubectl explain psp
 KIND:     PodSecurityPolicy
@@ -152,7 +152,7 @@ podsecuritypolicy.policy/permissive created
 
 获取已存在策略列表,使用 kubectl get:
 
-```shell
+```bash
 [root@k8s-master apiserver]# kubectl get psp
 NAME         PRIV    CAPS   SELINUX    RUNASUSER   FSGROUP    SUPGROUP   READONLYROOTFS   VOLUMES
 permissive   false          RunAsAny   RunAsAny    RunAsAny   RunAsAny   false            *
@@ -213,7 +213,7 @@ Spec:
 
 通过交互方式修改策略,使用 kubectl edit:
 
-```shell
+```bash
 # 打开一个默认文本编辑器,修改策略
 [root@k8s-master apiserver]# kubectl edit psp permissive
 ```
@@ -222,7 +222,7 @@ Spec:
 
 一旦不再需要一个策略,很容易通过 kubectl 删除它:
 
-```shell
+```bash
 [root@k8s-master apiserver]# kubectl delete psp permissive
 podsecuritypolicy.policy "permissive" deleted
 ```
@@ -231,7 +231,7 @@ podsecuritypolicy.policy "permissive" deleted
 
 ### 在APIServer中启用PSP
 
-```shell
+```bash
 [root@k8s-master apiserver]# vi /etc/kubernetes/manifests/kube-apiserver.yaml
 apiVersion: v1
 kind: Pod
@@ -252,7 +252,7 @@ spec:
 
 通过RBAC授权, 类似于下面的配置
 
-```shell
+```bash
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -267,7 +267,7 @@ rules:
 
 然后绑定即可
 
-```shell
+```bash
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:

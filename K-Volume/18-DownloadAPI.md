@@ -10,7 +10,7 @@ Download API作用：可以通过环境变量或Volume挂载将pod信息注入�
 
 fieldRef字段引用的信息具体如下：
 
-```shell
+```bash
 pod.spec.nodeName              #node节点名称
 pod.spec.serviceAccountName    #pod对象使用的serviceAccount资源名称
 pod.status.hostIP              #pod的IP地址
@@ -25,7 +25,7 @@ pod.metadata.annotations       #pod对象注解信息中的指定键的值
 
 ### 注入环境变量
 
-```shell
+```bash
 [root@k8s-master01 ~]# mkdir -p yamls/volume/downapi
 [root@k8s-master01 ~]# cd yamls/volume/downapi/
 [root@k8s-master01 downapi]# vim dlapi-demo.yaml
@@ -67,7 +67,7 @@ MY_POD_NAME=dlapi-demo
 
 ### 存储卷注入元数据
 
-```shell
+```bash
 # 创建yaml
 [root@k8s-master01 downapi]# vim dlapi-demo-vol.yaml 
 kind: Pod

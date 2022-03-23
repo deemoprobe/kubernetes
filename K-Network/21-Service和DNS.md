@@ -348,7 +348,7 @@ dnsConfig 字段是可选的，它可以与任何 dnsPolicy 设置一起使用�
 - searches：用于在 Pod 中查找主机名的 DNS 搜索域的列表。此属性是可选的, Kubernetes 最多允许 6 个搜索域
 - options：可选的对象列表，其中每个对象可能具有 name 属性（必需）和 value 属性（可选）
 
-```shell
+```bash
 # 创建自定义DNS的Pod
 [root@k8s-master01 network]# vim pod_dns.yaml
 apiVersion: v1

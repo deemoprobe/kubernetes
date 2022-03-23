@@ -18,7 +18,7 @@ CentOS-7版本启动NFS server之前，首先要启动RPC服务，完成NFS向RP
 
 ## 安装NFS和RPC服务(服务端和客户端均安装)
 
-```shell
+```bash
 # nfs-server和nfs-client均需要安装，此处以nfs-server为例
 # 安装NFS和RPC
 [root@nfs-server ~]# yum install nfs-utils rpcbind -y
@@ -35,7 +35,7 @@ nfsnobody:x:65534:65534:Anonymous NFS User:/var/lib/nfs:/sbin/nologin
 
 ## 配置NFS服务端
 
-```shell
+```bash
 [root@nfs-server ~]# mkdir /data
 [root@nfs-server ~]# chown -R nfsnobody.nfsnobody /data/
 [root@nfs-server ~]# ll -d /data/
@@ -151,7 +151,7 @@ Mar 16 14:34:42 cicd-dest systemd[1]: Started NFS server and services.
 - anonuid=xxx：将远程访问的所有用户主都映射为匿名用户主账户,并指定该匿名用户主为本地用户主(UID=xxx)
 - anongid=xxx：将远程访问的所有用户组都映射为匿名用户组账户,并指定该匿名用户组为本地用户组(GID=xxx)
 
-```shell
+```bash
 # 查看服务端NFS已经开放/data 192.168.43.212为服务端IP
 [root@nfs-server ~]# showmount -e 192.168.43.212
 Export list for 192.168.43.212:
@@ -173,7 +173,7 @@ success
 
 ## 配置NFS客户端
 
-```shell
+```bash
 # 启动rpcbind
 [root@k8s-node02 ~]# systemctl start rpcbind
 # 查看服务端NFS服务共享信息, 192.168.43.212为服务端IP
@@ -193,7 +193,7 @@ Export list for 192.168.43.212:
 
 ## 测试
 
-```shell
+```bash
 # 1.客户端创建文件夹或创建文件并且输入数据，在服务端查看同步结果
 # 客户端
 [root@k8s-node02 ~]# cd /mnt/
@@ -221,7 +221,7 @@ Message from nfs-server: nfs-server
 
 配置客户端重启自动挂载NFS，若是下面方式1，必须保证`/etc/rc.d/rc.local`文件具有可执行权限，否则该脚本不会执行也不会生效。推荐方式2。
 
-```shell
+```bash
 # 开机自启动方式1, 挂载信息写入系统启动加载文件
 [root@k8s-node02 mnt]# ll /etc/rc.local 
 lrwxrwxrwx. 1 root root 13 Mar  5 15:12 /etc/rc.local -> rc.d/rc.local
