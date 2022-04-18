@@ -17,7 +17,7 @@
 - Cgroup：隔离进程组的资源（CPU/Mem等）
 - Time：最新的命名空间，可用于虚拟化系统时钟
 
-Hypervisor是创建和运行虚拟机的管理程序，有两种类型，一种是直接在裸服务器硬件上工作；另一种是在操作系统之上工作。传统虚拟机通常擦用这种技术进行虚拟化。
+Hypervisor是创建和运行虚拟机的管理程序，有两种类型，一种是直接在裸服务器硬件上工作；另一种是在操作系统之上工作。传统虚拟机通常采用这种技术进行虚拟化。
 
 ![Hypervisor](https://deemoprobe.oss-cn-shanghai.aliyuncs.com/images/Hypervisor.jpg)
 
